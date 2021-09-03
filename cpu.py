@@ -52,7 +52,7 @@ def read_charging_state() -> bool:
     else:
         # Unknown ac state
         ac_state = None
-    
+
     # Possible values: Charging, Discharging, Unknown
     battery_data = shell_output(f"grep . {POWER_DIR}BAT*/status")
 
@@ -85,7 +85,7 @@ def read_cpu_load() -> bool:
     raise NotImplementedError
 
 def ranges_to_list() -> list:
-    #Maybe small enough to be included in get_cores_online
+    # Maybe small enough to be included in get_cores_online
     raise NotImplementedError
 
 def get_cores_online() -> list:
@@ -112,21 +112,40 @@ def read_crit_temp() -> int:
         # If no crit temp found default to 100
         return 100
 
-
 def read_cpu_info() -> dict:
     '''Reads cpufreq data from filesystem, returns dict'''
 
     cpudir = '/sys/devices/system/cpu/cpu0/cpufreq/'
 
-    return dict(crittemp=crit_temp(),
-                minfreq=read_datafile(cpudir+'cpuinfo_min_freq', dtype=int),
-                maxfreq=read_datafile(cpudir+'cpuinfo_max_freq', dtype=int),
-                governors=read_datafile(
-                    cpudir+'scaling_available_governors').split(' '),
-                policies=read_datafile(
-                    cpudir+'energy_performance_available_preferences').split(' ')
-                )
+    return dict(
+        name=shell_output('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
+        core_count=int(shell_output('grep siblings /proc/cpuinfo').split(':')[-1]),
+        crittemp=read_crit_temp(),
+        minfreq=read_datafile(cpudir+'cpuinfo_min_freq', dtype=int),
+        maxfreq=read_datafile(cpudir+'cpuinfo_max_freq', dtype=int),
+        governors=read_datafile(cpudir+'scaling_available_governors').split(' '),
+        policies=read_datafile(cpudir+'energy_performance_available_preferences').split(' ')
+    )
 
 
 # OUTPUT
 
+def set_governor():
+    raise NotImplementedError
+
+def set_policy():
+    raise NotImplementedError
+
+def set_freq_range():
+    raise NotImplementedError
+
+def set_perf_range():
+    raise NotImplementedError
+
+def set_turbo():
+    raise NotImplementedError
+
+
+# main
+if __name__ == '__main__':
+    print(read_cpu_info())
