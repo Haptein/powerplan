@@ -1,11 +1,11 @@
 # cpuauto
-WIP
+### WIP
 
-Structure:
-    cpuauto : main file
-    cpu : cpu API
-    config : well, umm config stuffs.
-    log : error and performance logging.
+### Structure:
+    - cpuauto : main file
+    - cpu : cpu API
+    - config : well, umm config stuffs.
+    - log : error and performance logging.
 
 
 # TODO
