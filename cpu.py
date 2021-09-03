@@ -81,15 +81,41 @@ def read_power_draw() -> bool:
     voltage = float(shell_output(f"grep . {POWER_DIR}BAT*/voltage_now")) / 10**6
     return current * voltage
 
-def read_cpu_load() -> bool:
-    raise NotImplementedError
 
-def ranges_to_list() -> list:
-    # Maybe small enough to be included in get_cores_online
-    raise NotImplementedError
+def read_cores_online() -> list:
+    '''Parses cores online from online ranges file'''
 
-def get_cores_online() -> list:
-    raise NotImplementedError
+    cores_online = []
+    online_ranges = read_datafile('/sys/devices/system/cpu/online').split(',')
+
+    for online_range in online_ranges:
+        if '-' in online_range:
+            start, end = online_range.split('-')
+            cores_online.extend(list(range(int(start), int(end)+1)))
+        else:
+            cores_online.append(int(online_range))
+    return cores_online
+
+
+def read_cpu_utilization(mode='max'):
+    '''
+    CPU utilization
+    mode : str =  ['avg', 'max', 'all']
+    for mode in ['avg', 'max']
+        returns : float, in range [0.0-100.0]
+    for mode == 'all':
+        returns dict of floats with cpu_id:utilization pairs
+    '''
+    if mode == 'avg':
+        return psutil.cpu_percent()
+    elif mode == 'max':
+        return max(psutil.cpu_percent(percpu=True))
+    elif mode == 'all':
+        # Get online cores and return a dict from cpu_percent(percpu=True)
+        cores_online = read_cores_online()
+        percpu_utilization = psutil.cpu_percent(percpu=True)
+        return dict(zip(cores_online, percpu_utilization))
+
 
 def read_turbo_state():
     '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
@@ -145,7 +171,13 @@ def set_perf_range():
 def set_turbo():
     raise NotImplementedError
 
+def set_cores_online():
+    # chcpu
+    raise NotImplementedError
+
 
 # main
 if __name__ == '__main__':
-    print(read_cpu_info())
+    cpu_info = read_cpu_info()
+    for key in cpu_info:
+        print(f'{key}:\t{cpu_info[key]}')
