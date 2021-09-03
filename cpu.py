@@ -36,7 +36,7 @@ def read_datafile(path: str, dtype=str):
     return dtype(data)
 
 def read_procs() -> set:
-    return set(shell_output("grep -h . /proc/*/comm").split('\n'))  # 2000 : 17.95s
+    return set(shell_output("grep -h . /proc/*/comm").splitlines())  # 2000 : 17.95s
 
 def read_charging_state() -> bool:
     ''' Is battery charging? Assumes unavailable bat OR ac-adapter info.'''
