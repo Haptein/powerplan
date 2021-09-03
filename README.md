@@ -13,7 +13,6 @@
 ### Core Function
 - Cpu Interface
     - read_cpu_load
-    - read_charging_state
     - read_cores_online
     - set_governor
     - set_policy
