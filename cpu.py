@@ -39,32 +39,39 @@ def read_procs() -> set:
     return set(shell_output("grep -h . /proc/*/comm").splitlines())  # 2000 : 17.95s
 
 def read_charging_state() -> bool:
-    ''' Is battery charging? Assumes unavailable bat OR ac-adapter info.'''
+    ''' Is battery charging? Deals with unavailable bat OR ac-adapter info.'''
 
     # AC adapter states: 0, 1, unknown
-    ac_info = shell_output(f"grep . {POWER_DIR}A*/online").splitlines()
-    # if there's one ac-adapter on-line, ac_state is True
-    ac_state = any(['1' in ac.split(':')[-1] for ac in ac_info])
-
+    ac_data = shell_output(f"grep . -h {POWER_DIR}A*/online")
+    if '1' in ac_data:
+        # at least one online ac adapter
+        return True
+    elif '0' in ac_data:
+        # at least one offline ac adapter
+        ac_state = False
+    else:
+        # Unknown ac state
+        ac_state = None
+    
     # Possible values: Charging, Discharging, Unknown
-    battery_info = shell_output(f"grep . {POWER_DIR}BAT*/status")
+    battery_data = shell_output(f"grep . {POWER_DIR}BAT*/status")
 
     # need to explicitly check for each state in this order
     # considering multiple batteries
-    if "Discharging" in battery_info:
+    if "Discharging" in battery_data:
         battery_state = False
-    elif "Charging" in battery_info:
-        battery_state = True
-    else:
-        state = bat_info.power_plugged
-        battery_state = None
-
-    return state
-    # if both ac-adapter and battery states are unknown default charging == True
-    if ac_state or battery_info:
+    elif "Charging" in battery_data:
         return True
     else:
+        battery_state = None
+
+    # At this point both ac and bat state can only be False or None
+    if False in [ac_state, battery_state]:
         return False
+    else:
+        # both ac-adapter and battery states are unknown charging == True
+        # Desktop computers should fall in this case
+        return True
 
 
 def read_power_draw() -> bool:
