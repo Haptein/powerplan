@@ -99,6 +99,9 @@ def read_cores_online() -> list:
     return cores_online
 
 
+def read_process_cpu_mem(process):
+    return process.cpu_percent(), process.memory_percent()
+
 def read_cpu_utilization(mode='max'):
     '''
     CPU utilization
