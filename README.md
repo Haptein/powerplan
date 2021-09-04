@@ -12,7 +12,6 @@
 
 ### Core Function
 - Cpu Interface
-    - read cpu temp
     - set_governor
     - set_policy
     - set_freq_lims
