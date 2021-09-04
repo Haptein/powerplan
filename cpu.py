@@ -7,9 +7,39 @@ from pathlib import Path
 from pprint import pprint
 from log import log_warning, log_error
 
-
+# PATHS
 POWER_DIR = '/sys/class/power_supply/'
 SYSTEM_DIR = '/sys/devices/system/'
+
+# Interface
+PIPE = subprocess.PIPE
+
+def shell(command: str, return_stdout: bool = True) -> str:
+    shell_subprocess = subprocess.run(command, stdout=PIPE, shell=True)
+    if return_stdout:
+        return shell_subprocess.stdout.decode('utf-8')
+
+def check_root_privileges():
+    if getuid() != 0:
+        log_error('This software must run with root privileges.')
+
+def read_datafile(path: str, dtype=str):
+    '''Reads first line of a file, strips and converts to dtype.'''
+    with open(path, "r") as file:
+        data = file.readline().strip()
+    return dtype(data)
+
+
+# Scaling driver
+
+# Hardware : intel_pstate
+# Kernel (cpufreq) : intel_cpufreq, acpi-cpufreq, speedstep-lib, powernow-k8, pcc-cpufreq, p4-clockmod
+scaling_driver_data = read_datafile(SYSTEM_DIR + 'cpu/cpufreq/policy0/scaling_driver').lower()
+if scaling_driver_data == 'intel_pstate':
+    SCALING_DRIVER = 'intel_pstate'
+else:
+    SCALING_DRIVER = 'cpufreq'
+
 
 # Turbo
 
@@ -40,26 +70,10 @@ if TURBO_FILE is not None:
     except PermissionError:
         log_warning('Turbo (boost/core) is disabled on BIOS or not available.')
         TURBO_ALLOWED = False
+    else:
+        TURBO_ALLOWED = True
 
-# Shell interface
-PIPE = subprocess.PIPE
-
-def shell(command: str, return_stdout: bool = True) -> str:
-    shell_subprocess = subprocess.run(command, stdout=PIPE, shell=True)
-    if return_stdout:
-        return shell_subprocess.stdout.decode('utf-8')
-
-def check_root_privileges():
-    if getuid() != 0:
-        log_error('This software must run with root privileges.')
-
-# INPUT
-
-def read_datafile(path: str, dtype=str):
-    '''Reads first line of a file, strips and converts to dtype.'''
-    with open(path, "r") as f:
-        data = f.readline().strip()
-    return dtype(data)
+# SYSTEM
 
 def read_procs() -> set:
     return set(shell("grep -h . /proc/*/comm").splitlines())  # 2000 : 17.95s
@@ -108,6 +122,8 @@ def read_power_draw() -> bool:
     return current * voltage
 
 
+# CPU
+
 def cpu_ranges_to_list(cpu_ranges: str) -> list:
     '''Parses virtual cpu's (offline,online,present) files formatting '''
     cpus = []
@@ -146,14 +162,12 @@ def read_cpu_utilization(mode='max'):
         percpu_utilization = psutil.cpu_percent(percpu=True)
         return dict(zip(cores_online, percpu_utilization))
 
-
 def read_turbo_state():
     '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
     if TURBO_FILE is None:
         return None
     else:
         return bool(int(TURBO_FILE.read_text())) ^ TURBO_INVERSE
-
 
 def read_temperature() -> float:
     temperature_sensors = psutil.sensors_temperatures()
@@ -170,7 +184,6 @@ def read_temperature() -> float:
                "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
         log_warning(msg)
         return -1
-
 
 def read_crit_temp() -> int:
     core_temp = psutil.sensors_temperatures()
@@ -192,7 +205,7 @@ def read_cpu_info() -> dict:
 
     return dict(
         name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
-        core_count=int(shell('grep siblings /proc/cpuinfo').split(':')[-1]),
+        core_count=len(list_cores()),
         crit_temp=read_crit_temp(),
         minfreq=read_datafile(cpudir+'cpuinfo_min_freq', dtype=int),
         maxfreq=read_datafile(cpudir+'cpuinfo_max_freq', dtype=int),
@@ -201,7 +214,7 @@ def read_cpu_info() -> dict:
     )
 
 
-# OUTPUT
+# CPU CONTROL
 
 def set_governor():
     raise NotImplementedError
