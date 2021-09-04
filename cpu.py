@@ -2,6 +2,7 @@
 
 import psutil
 import subprocess
+from os import getuid
 from pathlib import Path
 from pprint import pprint
 from log import log_warning
@@ -30,6 +31,10 @@ def shell(command: str, return_stdout: bool = True) -> str:
     shell_subprocess = subprocess.run(command, stdout=PIPE, shell=True)
     if return_stdout:
         return shell_subprocess.stdout.decode('utf-8')
+
+def check_root_privileges():
+    if getuid() != 0:
+        log_error('This software must run with root privileges.')
 
 # INPUT
 
