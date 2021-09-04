@@ -5,24 +5,42 @@ import subprocess
 from os import getuid
 from pathlib import Path
 from pprint import pprint
-from log import log_warning
+from log import log_warning, log_error
 
 
-POWER_DIR = "/sys/class/power_supply/"
+POWER_DIR = '/sys/class/power_supply/'
+SYSTEM_DIR = '/sys/devices/system/'
 
 # Turbo
-p_state_path = Path("/sys/devices/system/cpu/intel_pstate/no_turbo")
-cpufreq_path = Path("/sys/devices/system/cpu/cpufreq/boost")
 
-# Set TURBO_FILE and TURBO_INVERSE
-if p_state_path.exists():
-    TURBO_FILE = p_state_path
+
+# https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
+turbo_pstate = Path(SYSTEM_DIR + 'cpu/intel_pstate/no_turbo')
+turbo_cpufreq = Path(SYSTEM_DIR + 'cpu/cpufreq/boost')
+turbo_amd_legacy = Path(SYSTEM_DIR + 'cpufreq/cpb')
+
+# Set TURBO_FILE, TURBO_INVERSE and TURBO_ALLOWED
+if turbo_pstate.exists():
+    TURBO_FILE = turbo_pstate
     TURBO_INVERSE = True
-elif cpufreq_path.exists():
-    TURBO_FILE = cpufreq_path
-    TURBO_INVERSE
+elif turbo_cpufreq.exists():
+    TURBO_FILE = turbo_cpufreq
+    TURBO_INVERSE = False
+elif turbo_amd_legacy.exists():
+    TURBO_FILE = turbo_amd_legacy
+    TURBO_INVERSE = False
 else:
     TURBO_FILE = None
+    log_warning('Turbo boost is not available.')
+
+if TURBO_FILE is not None:
+    # Test if writing to TURBO_FILE is possible
+    try:
+        turbo_file_contents = TURBO_FILE.read_text()
+        TURBO_FILE.write_text(turbo_file_contents)
+    except PermissionError:
+        log_warning('Turbo (boost/core) is disabled on BIOS or not available.')
+        TURBO_ALLOWED = False
 
 # Shell interface
 PIPE = subprocess.PIPE
@@ -95,7 +113,7 @@ def read_cores_online() -> list:
     '''Parses cores online from online ranges file'''
 
     cores_online = []
-    online_ranges = read_datafile('/sys/devices/system/cpu/online').split(',')
+    online_ranges = read_datafile(SYSTEM_DIR + 'cpu/online').split(',')
 
     for online_range in online_ranges:
         if '-' in online_range:
@@ -170,7 +188,7 @@ def read_crit_temp() -> int:
 def read_cpu_info() -> dict:
     '''Reads cpufreq data from filesystem, returns dict'''
 
-    cpudir = '/sys/devices/system/cpu/cpu0/cpufreq/'
+    cpudir = SYSTEM_DIR + 'cpu/cpu0/cpufreq/'
 
     return dict(
         name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
