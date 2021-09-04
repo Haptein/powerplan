@@ -46,7 +46,7 @@ else:
 # https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
 turbo_pstate = Path(SYSTEM_DIR + 'cpu/intel_pstate/no_turbo')
 turbo_cpufreq = Path(SYSTEM_DIR + 'cpu/cpufreq/boost')
-turbo_amd_legacy = Path(SYSTEM_DIR + 'cpufreq/cpb')
+turbo_amd_legacy = Path(SYSTEM_DIR + 'cpu0/cpufreq/cpb')
 
 # Set TURBO_FILE, TURBO_INVERSE and TURBO_ALLOWED
 if turbo_pstate.exists():
