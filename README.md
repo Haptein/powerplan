@@ -20,7 +20,6 @@
     - set_turbo_state
 
 - Applying CpuProfile
-- Config checks
 - Look into amd's platform specifics
 
 ### Diagnostics
