@@ -26,8 +26,10 @@ else:
 # Shell interface
 PIPE = subprocess.PIPE
 
-def shell_output(command: str) -> str:
-    return subprocess.run(command, stdout=PIPE, shell=True).stdout.decode('utf-8')
+def shell(command: str, return_stdout: bool = True) -> str:
+    shell_subprocess = subprocess.run(command, stdout=PIPE, shell=True)
+    if return_stdout:
+        return shell_subprocess.stdout.decode('utf-8')
 
 # INPUT
 
@@ -38,13 +40,13 @@ def read_datafile(path: str, dtype=str):
     return dtype(data)
 
 def read_procs() -> set:
-    return set(shell_output("grep -h . /proc/*/comm").splitlines())  # 2000 : 17.95s
+    return set(shell("grep -h . /proc/*/comm").splitlines())  # 2000 : 17.95s
 
 def read_charging_state() -> bool:
     ''' Is battery charging? Deals with unavailable bat OR ac-adapter info.'''
 
     # AC adapter states: 0, 1, unknown
-    ac_data = shell_output(f"grep . -h {POWER_DIR}A*/online")
+    ac_data = shell(f"grep . -h {POWER_DIR}A*/online")
     if '1' in ac_data:
         # at least one online ac adapter
         return True
@@ -56,7 +58,7 @@ def read_charging_state() -> bool:
         ac_state = None
 
     # Possible values: Charging, Discharging, Unknown
-    battery_data = shell_output(f"grep . {POWER_DIR}BAT*/status")
+    battery_data = shell(f"grep . {POWER_DIR}BAT*/status")
 
     # need to explicitly check for each state in this order
     # considering multiple batteries
@@ -79,8 +81,8 @@ def read_charging_state() -> bool:
 def read_power_draw() -> bool:
     '''Calculates power draw from battery current and voltage reporting.'''
     # This implementation assumes a single BATX directory, might have to revisit
-    current = float(shell_output(f"grep . {POWER_DIR}BAT*/current_now")) / 10**6
-    voltage = float(shell_output(f"grep . {POWER_DIR}BAT*/voltage_now")) / 10**6
+    current = float(shell(f"grep . {POWER_DIR}BAT*/current_now")) / 10**6
+    voltage = float(shell(f"grep . {POWER_DIR}BAT*/voltage_now")) / 10**6
     return current * voltage
 
 
@@ -166,8 +168,8 @@ def read_cpu_info() -> dict:
     cpudir = '/sys/devices/system/cpu/cpu0/cpufreq/'
 
     return dict(
-        name=shell_output('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
-        core_count=int(shell_output('grep siblings /proc/cpuinfo').split(':')[-1]),
+        name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
+        core_count=int(shell('grep siblings /proc/cpuinfo').split(':')[-1]),
         crit_temp=read_crit_temp(),
         minfreq=read_datafile(cpudir+'cpuinfo_min_freq', dtype=int),
         maxfreq=read_datafile(cpudir+'cpuinfo_max_freq', dtype=int),
