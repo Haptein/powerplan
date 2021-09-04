@@ -27,6 +27,7 @@
 - Print CPU info
 
 ### QoL
+- Only log temperatur sensor warning on initialization
 - GUI
 - Further Optimize
 
