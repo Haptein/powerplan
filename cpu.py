@@ -4,6 +4,7 @@ import psutil
 import subprocess
 from pathlib import Path
 from pprint import pprint
+from log import log_warning
 
 
 POWER_DIR = "/sys/class/power_supply/"
@@ -124,6 +125,23 @@ def read_turbo_state():
         return None
     else:
         return bool(int(TURBO_FILE.read_text())) ^ TURBO_INVERSE
+
+
+def read_temperature() -> float:
+    temperature_sensors = psutil.sensors_temperatures()
+    allowed_sensors = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
+
+    for sensor in allowed_sensors:
+        if sensor not in temperature_sensors:
+            continue
+        return temperature_sensors[sensor][0].current
+    else:
+        msg = ("Couldn't detect a known CPU temperature sensor."
+               f"\n\tKnown CPU temp sensors are: {allowed_sensors}"
+               f"\n\tDetected sensors were: {temperature_sensors.keys()}"
+               "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
+        log_warning(msg)
+        return -1
 
 
 def read_crit_temp() -> int:
