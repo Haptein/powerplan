@@ -89,7 +89,7 @@ class CpuProfile:
         self._check_value_in_range('bat_maxfreq', self.bat_maxfreq, allowed_freq_range)
 
         # Perf ranges
-        allowed_perf_range = [0, 100]
+        allowed_perf_range = [1, 100]
         self._check_value_order('bat_minperf/bat_maxperf', self.bat_minperf, self.bat_maxperf)
         self._check_value_in_range('ac_minperf', self.ac_minperf, allowed_perf_range)
         self._check_value_in_range('ac_maxperf', self.ac_maxperf, allowed_perf_range)
