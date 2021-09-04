@@ -13,7 +13,6 @@ SYSTEM_DIR = '/sys/devices/system/'
 
 # Turbo
 
-
 # https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
 turbo_pstate = Path(SYSTEM_DIR + 'cpu/intel_pstate/no_turbo')
 turbo_cpufreq = Path(SYSTEM_DIR + 'cpu/cpufreq/boost')
@@ -109,20 +108,21 @@ def read_power_draw() -> bool:
     return current * voltage
 
 
-def read_cores_online() -> list:
-    '''Parses cores online from online ranges file'''
-
-    cores_online = []
-    online_ranges = read_datafile(SYSTEM_DIR + 'cpu/online').split(',')
-
-    for online_range in online_ranges:
-        if '-' in online_range:
-            start, end = online_range.split('-')
-            cores_online.extend(list(range(int(start), int(end)+1)))
+def cpu_ranges_to_list(cpu_ranges: str) -> list:
+    '''Parses virtual cpu's (offline,online,present) files formatting '''
+    cpus = []
+    for cpu_range in cpu_ranges:
+        if '-' in cpu_range:
+            start, end = cpu_range.split('-')
+            cpus.extend(list(range(int(start), int(end)+1)))
         else:
-            cores_online.append(int(online_range))
-    return cores_online
+            cpus.append(int(cpu_range))
+    return cpus
 
+def list_cores(status='present') -> list:
+    assert status in ['offline', 'online', 'present']
+    cpu_ranges = read_datafile(SYSTEM_DIR + f'cpu/{status}').split(',')
+    return cpu_ranges_to_list(cpu_ranges)
 
 def read_process_cpu_mem(process):
     return process.cpu_percent(), process.memory_percent()
@@ -142,7 +142,7 @@ def read_cpu_utilization(mode='max'):
         return max(psutil.cpu_percent(percpu=True))
     elif mode == 'all':
         # Get online cores and return a dict from cpu_percent(percpu=True)
-        cores_online = read_cores_online()
+        cores_online = list_cores('online')
         percpu_utilization = psutil.cpu_percent(percpu=True)
         return dict(zip(cores_online, percpu_utilization))
 
