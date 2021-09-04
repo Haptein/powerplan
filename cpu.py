@@ -3,6 +3,7 @@
 import psutil
 import subprocess
 from pathlib import Path
+from pprint import pprint
 
 
 POWER_DIR = "/sys/class/power_supply/"
@@ -146,7 +147,7 @@ def read_cpu_info() -> dict:
     return dict(
         name=shell_output('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
         core_count=int(shell_output('grep siblings /proc/cpuinfo').split(':')[-1]),
-        crittemp=read_crit_temp(),
+        crit_temp=read_crit_temp(),
         minfreq=read_datafile(cpudir+'cpuinfo_min_freq', dtype=int),
         maxfreq=read_datafile(cpudir+'cpuinfo_max_freq', dtype=int),
         governors=read_datafile(cpudir+'scaling_available_governors').split(' '),
@@ -178,6 +179,4 @@ def set_cores_online():
 
 # main
 if __name__ == '__main__':
-    cpu_info = read_cpu_info()
-    for key in cpu_info:
-        print(f'{key}:\t{cpu_info[key]}')
+    pprint(read_cpu_info())
