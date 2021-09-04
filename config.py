@@ -99,24 +99,24 @@ class CpuProfile:
 
         # Governor available
         if self.ac_governor not in cpu_info['governors']:
-            error_msg = (f'Error: ac_governor value "{self.ac_governor}"'
+            error_msg = (f'ac_governor value "{self.ac_governor}"'
                          f'in profile "{self.name}" not in available governors.'
                          f'\nAvailable governors: {cpu_info["governors"]}')
             log_error(error_msg)
         if self.bat_governor not in cpu_info['governors']:
-            error_msg = (f'Error: bat_governor value "{self.bat_governor}"'
+            error_msg = (f'bat_governor value "{self.bat_governor}"'
                          f'in profile "{self.name}" not in available governors.'
                          f'\nAvailable governors: {cpu_info["governors"]}')
             log_error(error_msg)
 
         # Policy available
         if self.ac_policy not in cpu_info['policies']:
-            error_msg = (f'Error: ac_policy value "{self.ac_policy}"'
+            error_msg = (f'ac_policy value "{self.ac_policy}"'
                          f'in profile "{self.name}" not in available policies.'
                          f'\nAvailable policies: {cpu_info["policies"]}')
             log_error(error_msg)
         if self.bat_policy not in cpu_info['policies']:
-            error_msg = (f'Error: bat_policy value "{self.bat_policy}"'
+            error_msg = (f'bat_policy value "{self.bat_policy}"'
                          f'in profile "{self.name}" not in available policies.'
                          f'\nAvailable policies: {cpu_info["policies"]}')
             log_error(error_msg)
@@ -129,7 +129,7 @@ def check_config_keys(config):
 
     # Default profile checks
     if 'DEFAULT' not in config:
-        log_error('ERROR: DEFAULT profile not present in config file.')
+        log_error('DEFAULT profile not present in config file.')
     else:
         # Check that all needed keys are present in DEFAULT profile
         provided_default_keys = dict(name='', **config['DEFAULT']).keys()
@@ -142,7 +142,7 @@ def check_config_keys(config):
     for profile_name in config:
         for key in config[profile_name]:
             if key not in DEFAULT_CONFIG['DEFAULT'].keys():
-                log_error(f'Error: invalid key "{key}" in profile {profile_name}.')
+                log_error(f'invalid key "{key}" in profile {profile_name}.')
 
 
 def read_config():

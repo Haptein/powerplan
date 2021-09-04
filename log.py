@@ -1,6 +1,10 @@
 from sys import exit
 
-def log_error(message, terminate=True):
+def log_error(message):
+    message = 'Error: ' + message
     print(message)
-    if terminate:
-        exit(1)
+    exit(1)
+
+def log_warning(message):
+    message = 'Warning: ' + message
+    print(message)
