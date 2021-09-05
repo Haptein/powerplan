@@ -15,7 +15,6 @@
 ### Diagnostics
 - Error Logging
 - Performance Logging
-- Print CPU info in pretty organized way
 
 ### QoL
 - Only log temperatur sensor warning on initialization
@@ -23,3 +22,8 @@
 - GUI
 - Further Optimize
 
+References:
+- https://www.kernel.org/doc/html/v4.19/admin-guide/pm/intel_pstate.html
+- https://wiki.archlinux.org/title/CPU_frequency_scaling
+- https://01.org/linuxgraphics/gfx-docs/drm/admin-guide/pm/intel_pstate.html
+- https://linrunner.de/tlp/settings/processor.html

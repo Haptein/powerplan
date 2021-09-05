@@ -352,4 +352,3 @@ def display_cpu_info():
 # main
 if __name__ == '__main__':
     display_cpu_info()
-
