@@ -32,8 +32,7 @@ def shell(command: str, return_stdout: bool = True) -> str:
         return shell_subprocess.stdout.decode('utf-8')
 
 def check_root_privileges():
-    if getuid() != 0:
-        log_error('This software must run with root privileges.')
+    return getuid() == 0
 
 def read_datafile(path: str, dtype=str):
     '''Reads first line of a file, strips and converts to dtype.'''
@@ -170,15 +169,10 @@ def read_crit_temp() -> int:
 
 # CPU CONTROL
 
-    return dict(
-        name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
-        core_count=len(list_cores()),
-        crit_temp=read_crit_temp(),
-        minfreq=read_datafile(cpudir+'cpuinfo_min_freq', dtype=int),
-        maxfreq=read_datafile(cpudir+'cpuinfo_max_freq', dtype=int),
-        governors=read_datafile(cpudir+'scaling_available_governors').split(' '),
-        policies=read_datafile(cpudir+'energy_performance_available_preferences').split(' ')
-    )
+def set_governor(governor):
+    assert governor in CPU['governors']
+    for core_id in list_cores('online'):
+        Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
 
 
 # CPU CONTROL
