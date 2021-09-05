@@ -4,7 +4,6 @@ import psutil
 import subprocess
 from os import getuid
 from pathlib import Path
-from pprint import pprint
 from log import log_warning, log_error
 
 '''
@@ -342,6 +341,15 @@ for core_id in list_cores():
 CPU['thread_siblings'] = sorted(siblings_set)
 CPU['physical_cores'] = len(siblings_set)
 
+
+def display_cpu_info():
+    keys = 'name,physical_cores,logical_cores,thread_siblings,minfreq,maxfreq,' + \
+           'scaling_driver,turbo_allowed,turbo_path,governors,policies'
+    for key in keys.split(','):
+        print(key, ':', CPU[key])
+
+
 # main
 if __name__ == '__main__':
-    pprint(CPU)
+    display_cpu_info()
+
