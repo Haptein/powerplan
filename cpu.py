@@ -31,7 +31,7 @@ def shell(command: str, return_stdout: bool = True) -> str:
     if return_stdout:
         return shell_subprocess.stdout.decode('utf-8')
 
-def check_root_privileges():
+def is_root():
     return getuid() == 0
 
 def read_datafile(path: str, dtype=str):
@@ -85,9 +85,14 @@ def read_charging_state() -> bool:
 def read_power_draw() -> bool:
     '''Calculates power draw from battery current and voltage reporting.'''
     # This implementation assumes a single BATX directory, might have to revisit
-    current = float(shell(f"grep . {POWER_DIR}BAT*/current_now")) / 10**6
-    voltage = float(shell(f"grep . {POWER_DIR}BAT*/voltage_now")) / 10**6
-    return current * voltage
+    # On some systems power_now isn't available
+    power_data = shell(f"grep . {POWER_DIR}BAT*/power_now")
+    if power_data:
+        return float(power_data) / 10**6
+    else:
+        current = float(shell(f"grep . {POWER_DIR}BAT*/current_now")) / 10**6
+        voltage = float(shell(f"grep . {POWER_DIR}BAT*/voltage_now")) / 10**6
+        return current * voltage
 
 
 # CPU
@@ -105,8 +110,11 @@ def cpu_ranges_to_list(cpu_ranges: str) -> list:
 
 def list_cores(status='present') -> list:
     assert status in ['offline', 'online', 'present']
-    cpu_ranges = read_datafile(CPU_DIR + status).split(',')
-    return cpu_ranges_to_list(cpu_ranges)
+    cpu_ranges = read_datafile(CPU_DIR + status)
+    if not cpu_ranges:
+        return []
+    else:
+        return cpu_ranges_to_list(cpu_ranges.split(','))
 
 def read_process_cpu_mem(process):
     return process.cpu_percent(), process.memory_percent()
@@ -129,13 +137,6 @@ def read_cpu_utilization(mode='max'):
         cores_online = list_cores('online')
         percpu_utilization = psutil.cpu_percent(percpu=True)
         return dict(zip(cores_online, percpu_utilization))
-
-def read_turbo_state():
-    '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
-    if CPU['turbo_path'] is None:
-        return None
-    else:
-        return bool(int(CPU['turbo_path'].read_text())) ^ CPU['turbo_inverse']
 
 def read_temperature() -> float:
     temperature_sensors = psutil.sensors_temperatures()
@@ -168,23 +169,111 @@ def read_crit_temp() -> int:
 
 
 # CPU CONTROL
+def read_governor(core_id: int = 0) -> str:
+    return read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor')
 
 def set_governor(governor):
     assert governor in CPU['governors']
+    if read_governor() != governor:
+        for core_id in list_cores('online'):
+            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
+
+def read_policy(core_id: int = 0) -> str:
+    return read_datafile(f'CPU_DIR + cpu{core_id}/cpufreq/energy_performance_preference')
+
+def set_policy(policy):
+    assert policy in CPU['policies']
+    if policy != read_policy():
+        for core_id in list_cores('online'):
+            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(policy)
+
+def read_freq_range(core_id: int = 0) -> list:
+    scaling_min_freq = read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
+    scaling_max_freq = read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq', int)
+    return [scaling_min_freq, scaling_max_freq]
+
+def set_freq_range(min_freq: int, max_freq: int):
+    # Preferred for cpufreq
+    assert min_freq <= max_freq
+    # Write new freq values if different from current
+    current_freq_range = read_freq_range()
     for core_id in list_cores('online'):
-        Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
+        if min_freq != current_freq_range[0]:
+            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq').write_text(str(min_freq))
+        if max_freq != current_freq_range[1]:
+            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq').write_text(str(max_freq))
+
+def read_perf_range() -> list:
+    min_perf_pct = int(CPU['min_perf_pct_path'].read_text())
+    max_perf_pct = int(CPU['max_perf_pct_path'].read_text())
+    return [min_perf_pct, max_perf_pct]
+
+def set_perf_range(min_perf_pct: int, max_perf_pct: int):
+    # This setting only exists for intel_pstate
+    assert max_perf_pct >= min_perf_pct
+    if CPU['scaling_driver'] == 'intel_pstate':
+        current_perf_range = read_perf_range()
+        if min_perf_pct != current_perf_range[0]:
+            CPU['min_perf_pct_path'].write_text(min_perf_pct)
+        if max_perf_pct != current_perf_range[1]:
+            CPU['max_perf_pct_path'].write_text(max_perf_pct)
+
+def read_turbo_state():
+    '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
+    if CPU['turbo_path'] is None:
+        return None
+    else:
+        return bool(int(CPU['turbo_path'].read_text())) ^ CPU['turbo_inverse']
+
+def set_turbo_state(turbo_state: bool):
+    if CPU['turbo_allowed'] and (turbo_state != read_turbo_state()):
+        CPU['turbo_path'].write_text(str(int(turbo_state ^ CPU['turbo_inverse'])))
+
+def set_all_cores_online():
+    # Needed to initialize CPU properly
+    for core_id in list_cores('present'):
+        core_id_online_path = Path(CPU_DIR + f'cpu{core_id}/online')
+        if core_id_online_path.exists():
+            core_id_online_path.write_text('1')
+
+def read_physical_core_status(core_num: int) -> bool:
+    assert 0 <= core_num and core_num <= CPU['physical_cores']-1
+    core_ids = CPU['thread_siblings'][core_num]
+    # Can't (and shouldn't) turn off core 0
+    if 0 in core_ids:
+        return True
+    else:
+        # Just test the first one,
+        # not expecting a case where other processes turn off cores
+        return bool(read_datafile(CPU_DIR + f'cpu{core_ids[0]}/online', int))
+
+def set_physical_cores_online(num_cores: int):
+    '''Sets the number of online physical cores, turns off the rest'''
+    assert 0 < num_cores and num_cores <= CPU['physical_cores']
+    # Iterate over physical core_num and virtual core siblings
+    for core_num, core_ids in enumerate(CPU['thread_siblings']):
+        core_online = read_physical_core_status(core_num)
+        print(core_num, core_ids, core_online)
+        if core_num < num_cores:  # not <= bc core_num starts from zero
+            # Set to Online
+            if not core_online:
+                for core_id in core_ids:
+                    Path(CPU_DIR + f'cpu{core_id}/online').write_text(str(1))
+        else:
+            # Set to offline
+            if core_online:
+                for core_id in core_ids:
+                    Path(CPU_DIR + f'cpu{core_id}/online').write_text(str(0))
 
 
-# CPU CONTROL
+# CPU: dict, stores all cpu_specs / Path_objs (except for individual core ones)
 
-def set_governor():
-    raise NotImplementedError
+# Setting all cores online is needed for accurate physical/logical/sibling info retrival
 
-def set_policy():
-    raise NotImplementedError
-
-
-# CPU: dict, stores all cpu_specs / Path_objs
+if is_root():
+    set_all_cores_online()
+elif list_cores('offline'):
+    log_error('Root privileges needed. CPU topology can\'t be read properly since there are offline cores.')
 
 CPU = dict(
     name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),

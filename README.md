@@ -7,27 +7,19 @@
     - config : well, umm config stuffs.
     - log : error and performance logging.
 
-
 # TODO
 
 ### Core Function
-- Cpu Interface
-    - set_governor
-    - set_policy
-    - set_freq_lims
-    - set_perf_lims
-    - set_turbo_state
-
 - Applying CpuProfile
-- Look into amd's platform specifics
 
 ### Diagnostics
 - Error Logging
 - Performance Logging
-- Print CPU info
+- Print CPU info in pretty organized way
 
 ### QoL
 - Only log temperatur sensor warning on initialization
+- Parameter assume desktop system (?)
 - GUI
 - Further Optimize
 
