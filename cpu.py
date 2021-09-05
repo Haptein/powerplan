@@ -272,8 +272,10 @@ def set_physical_cores_online(num_cores: int):
 
 if is_root():
     set_all_cores_online()
-elif list_cores('offline'):
-    log_error('Root privileges needed. CPU topology can\'t be read properly since there are offline cores.')
+else:
+    if list_cores('offline'):
+        log_error('Root privileges needed. CPU topology can\'t be read properly since there are offline cores.')
+    log_warning('Root privileges needed. Can\'t tell if turbo is available.')
 
 CPU = dict(
     name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
