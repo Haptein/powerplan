@@ -5,21 +5,20 @@ import toml
 from dataclasses import dataclass
 
 from log import log_error
-from cpu import read_cpu_info
+from cpu import CPU
 
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = CONFIG_DIR + "/cpuauto.toml"
 
-cpu_info = read_cpu_info()
 DEFAULT_CONFIG = dict(DEFAULT=dict(
     priority=99,
     pollingperiod=2000,
-    ac_templimit=cpu_info['crit_temp'],
-    bat_templimit=cpu_info['crit_temp'],
-    ac_minfreq=cpu_info['minfreq'],
-    ac_maxfreq=cpu_info['maxfreq'],
-    bat_minfreq=cpu_info['minfreq'],
-    bat_maxfreq=int(cpu_info['minfreq']*0.75 + cpu_info['maxfreq']*0.25),
+    ac_templimit=CPU['crit_temp'],
+    bat_templimit=CPU['crit_temp'],
+    ac_minfreq=CPU['minfreq'],
+    ac_maxfreq=CPU['maxfreq'],
+    bat_minfreq=CPU['minfreq'],
+    bat_maxfreq=int(CPU['minfreq']*0.75 + CPU['maxfreq']*0.25),
     ac_minperf=0,
     ac_maxperf=100,
     bat_minperf=0,
@@ -77,10 +76,9 @@ class CpuProfile:
 
     def __post_init__(self):
         # Validates profile values
-        cpu_info = read_cpu_info()
 
         # Freq ranges
-        allowed_freq_range = [cpu_info['minfreq'], cpu_info['maxfreq']]
+        allowed_freq_range = [CPU['minfreq'], CPU['maxfreq']]
         self._check_value_order('ac_minfreq/ac_maxfreq', self.ac_minfreq, self.ac_maxfreq)
         self._check_value_in_range('ac_minfreq', self.ac_minfreq, allowed_freq_range)
         self._check_value_in_range('ac_maxfreq', self.ac_maxfreq, allowed_freq_range)
@@ -98,27 +96,27 @@ class CpuProfile:
         self._check_value_in_range('bat_maxperf', self.bat_maxperf, allowed_perf_range)
 
         # Governor available
-        if self.ac_governor not in cpu_info['governors']:
+        if self.ac_governor not in CPU['governors']:
             error_msg = (f'ac_governor value "{self.ac_governor}"'
                          f'in profile "{self.name}" not in available governors.'
-                         f'\nAvailable governors: {cpu_info["governors"]}')
+                         f'\nAvailable governors: {CPU["governors"]}')
             log_error(error_msg)
-        if self.bat_governor not in cpu_info['governors']:
+        if self.bat_governor not in CPU['governors']:
             error_msg = (f'bat_governor value "{self.bat_governor}"'
                          f'in profile "{self.name}" not in available governors.'
-                         f'\nAvailable governors: {cpu_info["governors"]}')
+                         f'\nAvailable governors: {CPU["governors"]}')
             log_error(error_msg)
 
         # Policy available
-        if self.ac_policy not in cpu_info['policies']:
+        if self.ac_policy not in CPU['policies']:
             error_msg = (f'ac_policy value "{self.ac_policy}"'
                          f'in profile "{self.name}" not in available policies.'
-                         f'\nAvailable policies: {cpu_info["policies"]}')
+                         f'\nAvailable policies: {CPU["policies"]}')
             log_error(error_msg)
-        if self.bat_policy not in cpu_info['policies']:
+        if self.bat_policy not in CPU['policies']:
             error_msg = (f'bat_policy value "{self.bat_policy}"'
                          f'in profile "{self.name}" not in available policies.'
-                         f'\nAvailable policies: {cpu_info["policies"]}')
+                         f'\nAvailable policies: {CPU["policies"]}')
             log_error(error_msg)
 
 
