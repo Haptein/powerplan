@@ -178,13 +178,13 @@ def set_governor(governor):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
 
 def read_policy(core_id: int = 0) -> str:
-    return read_datafile(f'CPU_DIR + cpu{core_id}/cpufreq/energy_performance_preference')
+    return read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
 
 def set_policy(policy):
     assert policy in CPU['policies']
     if policy != read_policy():
         for core_id in list_cores('online'):
-            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(policy)
+            Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
 
 def read_freq_range(core_id: int = 0) -> list:
     scaling_min_freq = read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
@@ -213,9 +213,9 @@ def set_perf_range(min_perf_pct: int, max_perf_pct: int):
     if CPU['scaling_driver'] == 'intel_pstate':
         current_perf_range = read_perf_range()
         if min_perf_pct != current_perf_range[0]:
-            CPU['min_perf_pct_path'].write_text(min_perf_pct)
+            CPU['min_perf_pct_path'].write_text(str(min_perf_pct))
         if max_perf_pct != current_perf_range[1]:
-            CPU['max_perf_pct_path'].write_text(max_perf_pct)
+            CPU['max_perf_pct_path'].write_text(str(max_perf_pct))
 
 def read_turbo_state():
     '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
