@@ -1,5 +1,21 @@
 # cpuauto
-### WIP
+
+Actively monitors charging, CPU utilization and temperature to automatically switch between CPU power configurations, optimizing battery life and system responsivity. This software is still WIP, and some functionalities might not yet be implemented. This software interacts directly with the Linux kernel userspace tools to change the CPU's configuration.
+
+While it ships with sensible defaults, in practice, every use case is different. With cpuauto it's easy to create different power profiles (or edit the default one) that switch on and off automatically whenever specified processes are running. You could have a low temperature target profile that switches on whenever you open your preferred pdf viewer or a highly performant profile whenever you run blender, for example.
+
+This software also gives you the tools to understand your specific machine power/temperature characteristics, aiding you in the creation of these profiles.
+
+These are the configurable options:
+- TDP limits (TBD)
+- Temperature target (Not yet implemented)
+- Online core count
+- Turbo states
+- Performance range (intel_pstate)
+- Frequency range
+- Frequency scaling governors
+- Energy performance preference
+
 
 ### Structure:
     - cpuauto : main file
@@ -10,20 +26,18 @@
 # TODO
 
 ### Core Function
-- Applying CpuProfile
+- Demand / Power curves (?)
+- Demand / Corecount curves (?)
+- TDP Limiting (researching)
+- Temperature control system
 
 ### Diagnostics
 - Error Logging
-- Performance Logging
+- Performance Logging/Monitoring
 
 ### QoL
-- Only log temperatur sensor warning on initialization
-- Parameter assume desktop system (?)
+- Only log temperature sensor warning on initialization
+- BAT/AC Identification as initialization
 - GUI
 - Further Optimize
 
-References:
-- https://www.kernel.org/doc/html/v4.19/admin-guide/pm/intel_pstate.html
-- https://wiki.archlinux.org/title/CPU_frequency_scaling
-- https://01.org/linuxgraphics/gfx-docs/drm/admin-guide/pm/intel_pstate.html
-- https://linrunner.de/tlp/settings/processor.html
