@@ -252,17 +252,17 @@ def set_physical_cores_online(num_cores: int):
     # Iterate over physical core_num and virtual core siblings
     for core_num, core_ids in enumerate(CPU['thread_siblings']):
         core_online = read_physical_core_status(core_num)
-        print(core_num, core_ids, core_online)
-        if core_num < num_cores:  # not <= bc core_num starts from zero
+        # not <= bc core_num starts from zero
+        if core_num < num_cores:
             # Set to Online
             if not core_online:
                 for core_id in core_ids:
-                    Path(CPU_DIR + f'cpu{core_id}/online').write_text(str(1))
+                    Path(CPU_DIR + f'cpu{core_id}/online').write_text('1')
         else:
             # Set to offline
             if core_online:
                 for core_id in core_ids:
-                    Path(CPU_DIR + f'cpu{core_id}/online').write_text(str(0))
+                    Path(CPU_DIR + f'cpu{core_id}/online').write_text('0')
 
 
 # CPU: dict, stores all cpu_specs / Path_objs (except for individual core ones)

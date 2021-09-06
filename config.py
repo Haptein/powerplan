@@ -4,8 +4,9 @@ import os
 import toml
 from dataclasses import dataclass
 
-from log import log_error
+import cpu
 from cpu import CPU
+from log import log_error
 
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = CONFIG_DIR + "/cpuauto.toml"
@@ -63,7 +64,7 @@ class CpuProfile:
 
     def _check_value_in_range(self, value_name, value, allowed_range) -> bool:
         minimum, maximum = allowed_range
-        if not (minimum <= value and value <= maximum):
+        if not (minimum <= value and value <= maximum):  # range is limit inclusive
             error_msg = f'Error found in profile "{self.name}": value of {value_name} is outside allowed range.' + \
                 f'\nAllowed range for this value is: {allowed_range}.'
             log_error(error_msg)
@@ -71,7 +72,7 @@ class CpuProfile:
     def _check_value_order(self, range_name, minimum, maximum):
         if minimum > maximum:
             error_msg = f'Error found in profile "{self.name}": value of {range_name} is invalid.' + \
-                '\nmaximum must be greater than or equal to minimum.'
+                '\nMaximum must be greater than or equal to minimum.'
             log_error(error_msg)
 
     def __post_init__(self):

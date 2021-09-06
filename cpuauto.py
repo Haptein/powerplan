@@ -27,7 +27,7 @@ def debug_runtime_info():
     print('Profile:', needed_profile.name)
     print('Charging:', cpu.read_charging_state())
     print('CPU Utilization %:', cpu.read_cpu_utilization('avg'))
-    print(f'cpuauto: cpu% {cpuauto_util:.2f}, mem% {cpuauto_mem:.2f}')    
+    print(f'cpuauto: cpu% {cpuauto_util:.2f}, mem% {cpuauto_mem:.2f}')
 
 
 if __name__ == '__main__':
