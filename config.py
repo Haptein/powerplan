@@ -2,6 +2,7 @@
 
 import os
 import toml
+from time import sleep
 from dataclasses import dataclass
 
 import cpu
@@ -13,20 +14,23 @@ CONFIG_PATH = CONFIG_DIR + "/cpuauto.toml"
 
 DEFAULT_CONFIG = dict(DEFAULT=dict(
     priority=99,
-    pollingperiod=2000,
+    ac_pollingperiod=1000,
+    bat_pollingperiod=2000,
+    ac_cores_online=CPU['physical_cores'],
+    bat_cores_online=CPU['physical_cores'],
     ac_templimit=CPU['crit_temp'],
     bat_templimit=CPU['crit_temp'],
     ac_minfreq=CPU['minfreq'],
     ac_maxfreq=CPU['maxfreq'],
     bat_minfreq=CPU['minfreq'],
     bat_maxfreq=int(CPU['minfreq']*0.75 + CPU['maxfreq']*0.25),
-    ac_minperf=0,
+    ac_minperf=1,
     ac_maxperf=100,
-    bat_minperf=0,
+    bat_minperf=1,
     bat_maxperf=96,
     ac_turbo=True,
     bat_turbo=False,
-    ac_governor='performance',
+    ac_governor='powersave',
     bat_governor='powersave',
     ac_policy='balance_performance',
     bat_policy='power',
@@ -37,7 +41,10 @@ DEFAULT_CONFIG = dict(DEFAULT=dict(
 class CpuProfile:
     priority: int
     name: str
-    pollingperiod: int
+    ac_pollingperiod: int
+    bat_pollingperiod: int
+    ac_cores_online: int
+    bat_cores_online: int
     ac_templimit: int
     bat_templimit: int
     ac_minfreq: int
@@ -55,6 +62,25 @@ class CpuProfile:
     ac_policy: str
     bat_policy: str
     triggerapps: list
+
+    def apply(self):
+        charging = cpu.read_charging_state()
+        if charging:
+            cpu.set_physical_cores_online(self.ac_cores_online)
+            cpu.set_freq_range(self.ac_minfreq, self.ac_maxfreq)
+            cpu.set_perf_range(self.ac_minperf, self.ac_maxperf)
+            cpu.set_turbo_state(self.ac_turbo)
+            cpu.set_governor(self.ac_governor)
+            cpu.set_policy(self.ac_policy)
+            sleep(self.ac_pollingperiod / 1000)
+        else:
+            cpu.set_physical_cores_online(self.bat_cores_online)
+            cpu.set_freq_range(self.bat_minfreq, self.bat_maxfreq)
+            cpu.set_perf_range(self.bat_minperf, self.bat_maxperf)
+            cpu.set_turbo_state(self.bat_turbo)
+            cpu.set_governor(self.bat_governor)
+            cpu.set_policy(self.bat_policy)
+            sleep(self.bat_pollingperiod / 1000)
 
     def triggerapp_present(self, procs: set):
         for app in self.triggerapps:
@@ -77,6 +103,17 @@ class CpuProfile:
 
     def __post_init__(self):
         # Validates profile values
+
+        # Polling period
+        for value_name, value in zip(('ac_pollingperiod', 'bat_pollingperiod'),
+                                     (self.ac_pollingperiod, self.bat_pollingperiod)):
+            if value <= 0:
+                log_error(f'Error found in profile "{self.name}": value of {value_name} is invalid.'
+                          '\nThis value must be greater than zero.')
+
+        # Online Cores
+        self._check_value_in_range('', self.ac_cores_online, [1, CPU['physical_cores']])
+        self._check_value_in_range('', self.bat_cores_online, [1, CPU['physical_cores']])
 
         # Freq ranges
         allowed_freq_range = [CPU['minfreq'], CPU['maxfreq']]
