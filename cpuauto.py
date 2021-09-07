@@ -5,14 +5,16 @@ from argparse import ArgumentParser
 
 import log
 import cpu
-from time import time
+from time import sleep
 from config import read_profiles
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-d', '--debug', action='store_true',
                        help="Display runtime info.")
 argparser.add_argument('-i', '--info', action='store_true', help='Show system info.')
-args = argparser.parse_args()
+argparser.add_argument('-a', '--activate', default='', help='Just activate a given profile.')
+
+ARGS = argparser.parse_args()
 
 
 def get_triggered_profile(PROFILES: dict, PROFILES_SORTED: list):
@@ -27,31 +29,57 @@ def get_triggered_profile(PROFILES: dict, PROFILES_SORTED: list):
     else:
         return PROFILES['DEFAULT']
 
-def debug_runtime_info():
-    cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(PROCESS)
-    print('Profile:', needed_profile.name)
-    print('Charging:', cpu.read_charging_state())
-    print('CPU Utilization %:', cpu.read_cpu_utilization('avg'))
-    print(f'cpuauto: cpu% {cpuauto_util:.2f}, mem% {cpuauto_mem:.2f}')
+def debug_runtime_info(process, profile, sleep_time):
+    cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(process)
+    charging_state = cpu.read_charging_state()
+    if charging_state:
+        time_iter = profile.ac_pollingperiod - sleep_time*1000
+    else:
+        time_iter = profile.bat_pollingperiod - sleep_time*1000
+    print('Profile:', profile.name,
+          '\nCharging:', charging_state,
+          '\nPower:', f'{cpu.read_power_draw():.2f}W',
+          '\nTemperature:', f'{cpu.read_temperature()}°C',
+          '\nCPU Utilization %:', cpu.read_cpu_utilization('avg'),
+          f'\nProcess resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms\n')
+
+def single_activation(profile):
+    profiles = read_profiles()
+    if ARGS.activate in profiles:
+        profiles[ARGS.activate].apply()
+        print(profiles[ARGS.activate])
+        exit(0)
+    else:
+        log.log_error(f'Profile "{ARGS.activate}" not found in config file.')
+
+def main_loop():
+    process = Process()
+    profiles = read_profiles()
+    profiles_sorted = sorted(profiles.values())
+    while True:
+        # Get profile and apply
+        profile = get_triggered_profile(profiles, profiles_sorted)
+        sleep_time = profile.apply()
+
+        if ARGS.debug:
+            debug_runtime_info(process, profile, sleep_time)
+
+        if sleep_time > 0:
+            sleep(sleep_time)
 
 
 if __name__ == '__main__':
     if not cpu.is_root():
         log.log_error('Must be run with root provileges.')
-    if args.info:
+
+    if ARGS.info:
         cpu.display_cpu_info()
         exit(0)
 
-    PROCESS = Process()
-    PROFILES = read_profiles()
-    PROFILES_SORTED = sorted(PROFILES.values())
+    if ARGS.activate:
+        single_activation(ARGS.activate)
+    else:
+        main_loop()
+
     # Sorted by priority
     # TRIGGER_PROCS = { cpuprofile.triggerapps for cpuprofile in PROFILES_SORTED}
-    t0 = time()
-    while True:
-        needed_profile = get_triggered_profile(PROFILES, PROFILES_SORTED)
-        if args.debug:
-            debug_runtime_info()
-            print(f'Time since last iter:{time()-t0:.2f}\n')
-            t0 = time()
-        needed_profile.apply()

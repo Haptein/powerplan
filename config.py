@@ -2,12 +2,12 @@
 
 import os
 import toml
-from time import sleep
+from time import time
 from dataclasses import dataclass
 
 import cpu
 from cpu import CPU
-from log import log_error
+from log import log_error, log_warning
 
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = CONFIG_DIR + "/cpuauto.toml"
@@ -63,7 +63,9 @@ class CpuProfile:
     bat_policy: str
     triggerapps: list
 
-    def apply(self):
+    def apply(self) -> float:
+        ''' Applies profile configuration and returns sleep time needed (after compensation)'''
+        time_start = time()
         charging = cpu.read_charging_state()
         if charging:
             cpu.set_physical_cores_online(self.ac_cores_online)
@@ -72,7 +74,7 @@ class CpuProfile:
             cpu.set_turbo_state(self.ac_turbo)
             cpu.set_governor(self.ac_governor)
             cpu.set_policy(self.ac_policy)
-            sleep(self.ac_pollingperiod / 1000)
+            polling_period = self.ac_pollingperiod / 1000
         else:
             cpu.set_physical_cores_online(self.bat_cores_online)
             cpu.set_freq_range(self.bat_minfreq, self.bat_maxfreq)
@@ -80,7 +82,14 @@ class CpuProfile:
             cpu.set_turbo_state(self.bat_turbo)
             cpu.set_governor(self.bat_governor)
             cpu.set_policy(self.bat_policy)
-            sleep(self.bat_pollingperiod / 1000)
+            polling_period = self.bat_pollingperiod / 1000
+
+        # Time compensation
+        time_delta = time() - time_start
+        sleep_time = polling_period - time_delta
+        if sleep_time < 0:
+            log_warning(f'Process takes {time_delta} seconds. Polling period is too low.')
+        return sleep_time
 
     def triggerapp_present(self, procs: set):
         for app in self.triggerapps:
