@@ -60,8 +60,8 @@ def read_charging_state() -> bool:
         # Unknown ac state
         ac_state = None
 
-    # Possible values: Charging, Discharging, Unknown
-    battery_data = shell(f"grep . {POWER_DIR}BAT*/status")
+    # Possible values: "Unknown", "Charging", "Discharging", "Not charging", "Full"
+    battery_data = shell(f"grep . -h {POWER_DIR}BAT*/status")
 
     # need to explicitly check for each state in this order
     # considering multiple batteries
