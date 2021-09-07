@@ -404,6 +404,7 @@ def debug_info():
     power_supply_info = shell('grep . /sys/class/power_supply/*/*')
     [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
 
+
 # main
 if __name__ == '__main__':
     display_cpu_info()

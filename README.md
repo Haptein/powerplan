@@ -36,8 +36,8 @@ These are the configurable options:
 - Performance Logging/Monitoring
 
 ### QoL
-- Only log temperature sensor warning on initialization
-- BAT/AC Identification as initialization
+- Only log temperature sensor warning on initialization, sensor detection at init
+- Warn if no power reading method available
 - GUI
 - Further Optimize
 
