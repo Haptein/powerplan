@@ -53,7 +53,7 @@ def power_supply_detection() -> tuple:
     ac_devices = glob(f'{POWER_DIR}A*/type')
     for ac in ac_devices:
         if read_datafile(ac) == 'Mains':
-            ac_device_path = Path(Path(ac).parent.as_posix()+'/online')
+            ac_device_path = Path(ac).with_name('online')
             if ac_device_path.exists():
                 break
     else:
@@ -62,7 +62,7 @@ def power_supply_detection() -> tuple:
     bat_devices = glob(f'{POWER_DIR}BAT*/type')
     for bat in bat_devices:
         if read_datafile(bat) == 'Battery':
-            bat_device_path = Path(Path(bat).parent.as_posix()+'/status')
+            bat_device_path = Path(bat).with_name('status')
             if bat_device_path.exists():
                 break
     else:
@@ -77,9 +77,9 @@ def power_reading_method(bat_device_path):
     '''
     if bat_device_path is None:
         return None
-    power_now_path = Path(bat_device_path.parent.as_posix() + '/power_now')
-    current_now_path = Path(bat_device_path.parent.as_posix() + '/current_now')
-    voltage_now_path = Path(bat_device_path.parent.as_posix() + '/voltage_now')
+    power_now_path = bat_device_path.with_name('power_now')
+    current_now_path = bat_device_path.with_name('current_now')
+    voltage_now_path = bat_device_path.with_name('voltage_now')
     if power_now_path.exists():
         return 'power'
     elif current_now_path.exists() and voltage_now_path.exists():
@@ -129,11 +129,11 @@ def read_charging_state() -> bool:
 def read_power_draw() -> bool:
     '''Returns power draw in Watt units according to detected method'''
     if CPU['power_reading_method'] == 'power':
-        power_data = Path(CPU['bat_path'].parent.as_posix() + '/power_now').read_text()
+        power_data = CPU['bat_path'].with_name('power_now').read_text()
         return float(power_data) / 10**6
     elif CPU['power_reading_method'] == 'current_and_voltage':
-        current_data = Path(CPU['bat_path'].parent.as_posix() + '/current_now').read_text()
-        voltage_data = Path(CPU['bat_path'].parent.as_posix() + '/voltage_now').read_text()
+        current_data = CPU['bat_path'].with_name('current_now').read_text()
+        voltage_data = CPU['bat_path'].with_name('voltage_now').read_text()
         return float(current_data) * float(voltage_data) / 10**12
     else:
         return -1
