@@ -2,6 +2,7 @@
 
 import psutil
 import subprocess
+from glob import glob
 from os import getuid
 from pathlib import Path
 from log import log_warning, log_error
@@ -45,30 +46,74 @@ def read_datafile(path: str, dtype=str):
 def read_procs() -> set:
     return set(shell("grep -h . /proc/*/comm").splitlines())  # 2000 : 17.95s
 
+def power_supply_detection() -> tuple:
+    '''Returns tuple of ac_device_path, bat_device_path, power_path'''
+
+    # /type values: "Battery", "UPS", "Mains", "USB", "Wireless"
+    ac_devices = glob(f'{POWER_DIR}A*/type')
+    for ac in ac_devices:
+        if read_datafile(ac) == 'Mains':
+            ac_device_path = Path(Path(ac).parent.as_posix()+'/online')
+            if ac_device_path.exists():
+                break
+    else:
+        ac_device_path = None
+
+    bat_devices = glob(f'{POWER_DIR}BAT*/type')
+    for bat in bat_devices:
+        if read_datafile(bat) == 'Battery':
+            bat_device_path = Path(Path(bat).parent.as_posix()+'/status')
+            if bat_device_path.exists():
+                break
+    else:
+        bat_device_path = None
+
+    return ac_device_path, bat_device_path
+
+def power_reading_method(bat_device_path):
+    '''
+    Tests possible power reading paths
+    returns ['power', 'current_and_voltage', None]
+    '''
+    if bat_device_path is None:
+        return None
+    power_now_path = Path(bat_device_path.parent.as_posix() + '/power_now')
+    current_now_path = Path(bat_device_path.parent.as_posix() + '/current_now')
+    voltage_now_path = Path(bat_device_path.parent.as_posix() + '/voltage_now')
+    if power_now_path.exists():
+        return 'power'
+    elif current_now_path.exists() and voltage_now_path.exists():
+        return 'current_and_voltage'
+    else:
+        return None
+
 def read_charging_state() -> bool:
     ''' Is battery charging? Deals with unavailable bat OR ac-adapter info.'''
 
-    # AC adapter states: 0, 1, unknown
-    ac_data = shell(f"grep . -h {POWER_DIR}A*/online")
-    if '1' in ac_data:
-        # at least one online ac adapter
-        return True
-    elif '0' in ac_data:
-        # at least one offline ac adapter
-        ac_state = False
+    if CPU['ac_path'] is not None:
+        # AC adapter states: 0, 1, unknown
+        ac_data = CPU['ac_path'].read_text()
+        if '1' in ac_data:
+            # at least one online ac adapter
+            return True
+        elif '0' in ac_data:
+            # at least one offline ac adapter
+            ac_state = False
+        else:
+            # Unknown ac state
+            ac_state = None
     else:
-        # Unknown ac state
         ac_state = None
 
-    # Possible values: "Unknown", "Charging", "Discharging", "Not charging", "Full"
-    battery_data = shell(f"grep . -h {POWER_DIR}BAT*/status")
-
-    # need to explicitly check for each state in this order
-    # considering multiple batteries
-    if "Discharging" in battery_data:
-        battery_state = False
-    elif "Charging" in battery_data:
-        return True
+    if CPU['bat_path'] is not None:
+        # Possible values: "Unknown", "Charging", "Discharging", "Not charging", "Full"
+        battery_data = CPU['bat_path'].read_text()
+        if "Discharging" in battery_data:
+            battery_state = False
+        elif "Charging" in battery_data:
+            return True
+        else:
+            battery_state = None
     else:
         battery_state = None
 
@@ -82,17 +127,16 @@ def read_charging_state() -> bool:
 
 
 def read_power_draw() -> bool:
-    '''Calculates power draw from battery current and voltage reporting.'''
-    # This implementation assumes a single BATX directory, might have to revisit
-    # On some systems power_now isn't available
-    power_data = shell(f"grep . {POWER_DIR}BAT*/power_now")
-    if power_data:
+    '''Returns power draw in Watt units according to detected method'''
+    if CPU['power_reading_method'] == 'power':
+        power_data = Path(CPU['bat_path'].parent.as_posix() + '/power_now').read_text()
         return float(power_data) / 10**6
+    elif CPU['power_reading_method'] == 'current_and_voltage':
+        current_data = Path(CPU['bat_path'].parent.as_posix() + '/current_now').read_text()
+        voltage_data = Path(CPU['bat_path'].parent.as_posix() + '/voltage_now').read_text()
+        return float(current_data) * float(voltage_data) / 10**12
     else:
-        current = float(shell(f"grep . {POWER_DIR}BAT*/current_now")) / 10**6
-        voltage = float(shell(f"grep . {POWER_DIR}BAT*/voltage_now")) / 10**6
-        return current * voltage
-
+        return -1
 
 # CPU
 
@@ -341,10 +385,16 @@ for core_id in list_cores():
 CPU['thread_siblings'] = sorted(siblings_set)
 CPU['physical_cores'] = len(siblings_set)
 
+# Power supply detection and power reading mode
+ac_path, bat_path = power_supply_detection()
+CPU['ac_path'] = ac_path
+CPU['bat_path'] = bat_path
+CPU['power_reading_method'] = power_reading_method(bat_path)
 
 def display_cpu_info():
     keys = 'name,physical_cores,logical_cores,thread_siblings,minfreq,maxfreq,' + \
-           'scaling_driver,turbo_allowed,turbo_path,governors,policies'
+           'scaling_driver,turbo_allowed,turbo_path,governors,policies,ac_path,' + \
+           'bat_path,power_reading_method'
     for key in keys.split(','):
         print(key, ':', CPU[key])
 
