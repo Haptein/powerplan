@@ -349,6 +349,12 @@ def display_cpu_info():
         print(key, ':', CPU[key])
 
 
+def debug_info():
+    # POWER SUPPLY TREE
+    power_supply_info = shell('grep . /sys/class/power_supply/*/*')
+    [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
+
 # main
 if __name__ == '__main__':
     display_cpu_info()
+    debug_info()
