@@ -6,13 +6,15 @@ from argparse import ArgumentParser
 import log
 import cpu
 from time import sleep
-from config import read_profiles
+from pprint import pprint
+from config import read_profiles, read_config
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-d', '--debug', action='store_true',
-                       help="Display runtime info.")
-argparser.add_argument('-i', '--info', action='store_true', help='Show system info.')
-argparser.add_argument('-a', '--activate', default='', help='Just activate a given profile.')
+                       help="display runtime info")
+argparser.add_argument('-i', '--info', action='store_true', help='show system info')
+argparser.add_argument('-p', '--profile', default='', help='activate a given profile')
+argparser.add_argument('-l', '--list', action='store_true', help='list configured profiles')
 
 ARGS = argparser.parse_args()
 
@@ -45,12 +47,12 @@ def debug_runtime_info(process, profile, sleep_time):
 
 def single_activation(profile):
     profiles = read_profiles()
-    if ARGS.activate in profiles:
-        profiles[ARGS.activate].apply()
-        print(profiles[ARGS.activate])
+    if profile in profiles:
+        profiles[ARGS.profile].apply()
+        print(profiles[ARGS.profile])
         exit(0)
     else:
-        log.log_error(f'Profile "{ARGS.activate}" not found in config file.')
+        log.log_error(f'Profile "{ARGS.profile}" not found in config file.')
 
 def main_loop():
     process = Process()
@@ -75,9 +77,12 @@ if __name__ == '__main__':
     if ARGS.info:
         cpu.display_cpu_info()
         exit(0)
+    elif ARGS.list:
+        pprint(read_config())
+        exit(0)
 
-    if ARGS.activate:
-        single_activation(ARGS.activate)
+    if ARGS.profile:
+        single_activation(ARGS.profile)
     else:
         main_loop()
 

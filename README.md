@@ -4,7 +4,7 @@ Actively monitors charging, CPU utilization and temperature to automatically swi
 
 While it ships with sensible defaults, in practice, every use case is different. It's easy to create different power profiles (or edit the default one) that switch on and off automatically whenever specified processes are running. You could have a low temperature target profile that switches on whenever you open your preferred pdf viewer or a highly performant profile whenever you run blender, for example.
 
-This software also gives you the tools to understand your specific machine power/temperature characteristics, aiding you in the creation of these profiles.
+This software also gives you the tools to understand your specific machine power/temperature characteristics, aiding you in the creation of these profiles (WIP, that's the plan).
 
 These are the configurable options:
 - TDP limits (intel_pstate)
@@ -19,17 +19,17 @@ These are the configurable options:
 
 ## Usage
 ```
-usage: cpuauto.py [-h] [-d] [-i] [-a ACTIVATE] [-l]
+usage: cpuauto.py [-h] [-d] [-i] [-p PROFILE] [-l]
 
 Automatic CPU power configuration control.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --debug           Display runtime info.
-  -i, --info            Show system info.
-  -a ACTIVATE, --activate ACTIVATE
-                        Just activate a given profile.
-  -l, --list            List configured profiles.
+  -d, --debug           display runtime info
+  -i, --info            show system info
+  -p PROFILE, --profile PROFILE
+                        activate a given profile
+  -l, --list            list configured profiles
 ```
 
 ## Config guide
