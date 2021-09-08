@@ -308,6 +308,20 @@ def set_physical_cores_online(num_cores: int):
                 for core_id in core_ids:
                     Path(CPU_DIR + f'cpu{core_id}/online').write_text('0')
 
+def set_tdp_limits(PL1: int, PL2: int):
+    '''
+    Set PL1 and PL2 power limits (intel_pstate)
+    If PL1 or PL2 is zero, this does nothing.
+    '''
+    assert PL1 <= PL2
+    if CPU['scaling_driver'] == 'intel_pstate' and PL1 and PL2:
+        PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
+        PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
+        if PL1_path.exists() and PL2_path.exists():
+            PL1_path.write_text(str(PL1*1000000))
+            PL2_path.write_text(str(PL2*1000000))
+            PL1_path.with_name('enabled').write_text('1')
+
 
 # CPU: dict, stores all cpu_specs / Path_objs (except for individual core ones)
 

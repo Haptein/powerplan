@@ -28,6 +28,10 @@ DEFAULT_CONFIG = dict(DEFAULT=dict(
     ac_maxperf=100,
     bat_minperf=1,
     bat_maxperf=96,
+    ac_tdp_sutained=0,
+    ac_tdp_burst=0,
+    bat_tdp_sutained=0,
+    bat_tdp_burst=0,
     ac_turbo=True,
     bat_turbo=False,
     ac_governor='powersave',
@@ -55,6 +59,10 @@ class CpuProfile:
     ac_maxperf: int
     bat_minperf: int
     bat_maxperf: int
+    ac_tdp_sutained: int
+    ac_tdp_burst: int
+    bat_tdp_sutained: int
+    bat_tdp_burst: int
     ac_turbo: bool
     bat_turbo: bool
     ac_governor: str
@@ -141,6 +149,10 @@ class CpuProfile:
         self._check_value_order('bat_minperf/bat_maxperf', self.bat_minperf, self.bat_maxperf)
         self._check_value_in_range('bat_minperf', self.bat_minperf, allowed_perf_range)
         self._check_value_in_range('bat_maxperf', self.bat_maxperf, allowed_perf_range)
+
+        # TDP Limits PL1 <= PL2
+        self._check_value_order('ac_tdp_sustain/ac_tdp_burst', self.ac_tdp_sutained, self.ac_tdp_burst)
+        self._check_value_order('bat_tdp_sustain/bat_tdp_burst', self.bat_tdp_sutained, self.bat_tdp_burst)
 
         # Governor available
         if self.ac_governor not in CPU['governors']:
