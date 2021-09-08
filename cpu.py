@@ -311,9 +311,8 @@ def set_physical_cores_online(num_cores: int):
 
 # CPU: dict, stores all cpu_specs / Path_objs (except for individual core ones)
 
-# Setting all cores online is needed for accurate physical/logical/sibling info retrival
-
 if is_root():
+    # Setting all cores online is needed for accurate physical/logical/sibling info retrival
     set_all_cores_online()
 else:
     if list_cores('offline'):
