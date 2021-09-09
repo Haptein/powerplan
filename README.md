@@ -19,17 +19,18 @@ These are the configurable options:
 
 ## Usage
 ```
-usage: cpuauto.py [-h] [-d] [-i] [-p PROFILE] [-l]
+usage: cpuauto.py [-h] [-p PROFILE] [-l] [-s] [-d] [-v]
 
 Automatic CPU power configuration control.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --debug           display runtime info
-  -i, --info            show system info
   -p PROFILE, --profile PROFILE
-                        activate a given profile
-  -l, --list            list configured profiles
+                        activate a given profile and exit
+  -l, --list            list profiles and exit
+  -s, --status          show system status
+  -d, --debug           display additional runtime info
+  -v, --version         show program version and exit
 ```
 
 ## Config guide

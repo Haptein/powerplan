@@ -5,8 +5,12 @@ import platform
 import subprocess
 from glob import glob
 from os import getuid
+from sys import stdout
 from pathlib import Path
+from datetime import datetime
 from log import log_warning, log_error
+
+VERSION = '0.1'
 
 '''
 File structure:
@@ -47,6 +51,9 @@ def read_datafile(path: str, dtype=str):
 
 def read_procs() -> set:
     return set(shell("grep -h . /proc/*/comm", mute_stderr=True).splitlines())  # 2000 : 17.95s
+
+def process_instances(name: str) -> int:
+    return shell("grep -h . /proc/*/comm", mute_stderr=True).splitlines().count(name)
 
 def power_supply_detection() -> tuple:
     '''Returns tuple of ac_device_path, bat_device_path, power_path'''
@@ -409,6 +416,52 @@ CPU['ac_path'] = ac_path
 CPU['bat_path'] = bat_path
 CPU['power_reading_method'] = power_reading_method(bat_path)
 
+def show_system_status(profile):
+    '''Prints System status during runtime'''
+    # Clear anything below cursor
+    stdout.write('\033[J')
+
+    charging = read_charging_state()
+    time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+    active_profile = f'{time_now}\t\tActive: {profile.name}'
+    power_plan = f'Power plan: {read_governor()}/{read_policy()}'
+    power_status = f'Charging: {charging}\t\tBattery draw: {read_power_draw():.1f}W'
+
+    list_cores_online = list_cores('online')
+    cores_online = len(list_cores_online)
+    # Per cpu stats
+    cpus = '\t'.join(['CPU'+str(coreid) for coreid in list_cores('online')])
+    utils = '\t'.join([str(util) for util in psutil.cpu_percent(percpu=True)])
+
+    # Read current frequencies and discard 3 digits (round(freq/1000))
+    freq_readings = shell('grep . -h /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq').splitlines()
+    freq_list = [freq_readings[core_id][:-3] for core_id in list_cores_online]
+    avg_freqs = int(sum([int(freq) for freq in freq_list])/cores_online)
+    freqs = '\t'.join(freq_list)
+
+    # CPU average line
+    cpu_cores_turbo = '\t'.join([f'Cores online: {cores_online}',
+                                 f"Turbo: {'enabled' if read_turbo_state() else 'disabled'}"])
+
+    cpu_avg = '\t'.join([f"Avg. Usage: {read_cpu_utilization('avg')}%",
+                         f"Avg. Freq.: {avg_freqs}MHz",
+                         f'Package temp: {read_temperature()}°C'])
+
+    status_lines = [active_profile,
+                    power_plan,
+                    power_status,
+                    cpu_cores_turbo,
+                    cpu_avg,
+                    '',
+                    cpus,
+                    utils,
+                    freqs]
+
+    print('\n'.join(status_lines))
+    # Move cursor back for next iteration to clear
+    stdout.write(f'\033[{len(status_lines)}A')
+
+
 def debug_power_info():
     # POWER SUPPLY TREE
     power_supply_info = shell('grep . /sys/class/power_supply/*/* -d skip')
@@ -418,7 +471,7 @@ def debug_power_info():
 SYSTEM_INFO = f'''
     System
     OS:\t\t\t{platform.platform()}
-    Python:\t\t{platform.python_version()}
+    cpuauto:\t\t{VERSION} running on Python{platform.python_version()}
     CPU model:\t\t{CPU['name']}
     Core configuraton:\t{CPU['physical_cores']}/{len(list_cores())}\
     {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU['thread_siblings']])}
@@ -438,3 +491,4 @@ SYSTEM_INFO = f'''
 if __name__ == '__main__':
     print(SYSTEM_INFO)
     debug_power_info()
+    show_system_status()
