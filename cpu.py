@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import psutil
+import platform
 import subprocess
 from glob import glob
 from os import getuid
@@ -351,8 +352,11 @@ if scaling_driver_data == 'intel_pstate':
     CPU['scaling_driver'] = 'intel_pstate'
     CPU['min_perf_pct_path'] = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
     CPU['max_perf_pct_path'] = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
+    CPU['basefreq'] = read_datafile(CPUFREQ_DIR + 'base_frequency', dtype=int)
+    CPU['freq_info'] = f"{CPU['minfreq']} - {CPU['basefreq']} - {CPU['maxfreq']} kHz"
 else:
     CPU['scaling_driver'] = 'cpufreq'
+    CPU['freq_info'] = f"{CPU['minfreq']} - {CPU['maxfreq']} kHz"
 
 # turbo_allowed, turbo_file, turbo_inverse
 # https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
@@ -404,21 +408,32 @@ CPU['ac_path'] = ac_path
 CPU['bat_path'] = bat_path
 CPU['power_reading_method'] = power_reading_method(bat_path)
 
-def display_cpu_info():
-    keys = 'name,physical_cores,logical_cores,thread_siblings,minfreq,maxfreq,' + \
-           'scaling_driver,turbo_allowed,turbo_path,governors,policies,ac_path,' + \
-           'bat_path,power_reading_method'
-    for key in keys.split(','):
-        print(key, ':', CPU[key])
-
-
-def debug_info():
+def debug_power_info():
     # POWER SUPPLY TREE
-    power_supply_info = shell('grep . /sys/class/power_supply/*/*')
+    power_supply_info = shell('grep . /sys/class/power_supply/*/* -d skip')
     [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
 
 
+SYSTEM_INFO = f'''
+    System
+    OS:\t\t\t{platform.platform()}
+    Python:\t\t{platform.python_version()}
+    CPU model:\t\t{CPU['name']}
+    Core configuraton:\t{CPU['physical_cores']}/{len(list_cores())}\
+    {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU['thread_siblings']])}
+    Frequency range:\t{CPU['freq_info']}
+    Driver:\t\t{CPU['scaling_driver']}
+    Governors:\t\t{', '.join(CPU['governors'])}
+    Policies:\t\t{', '.join(CPU['policies'])}
+
+    Paths
+    Turbo:\t\t{CPU['turbo_path']}
+    AC adapter:\t\t{CPU['ac_path'].parent}
+    Battery:\t\t{CPU['bat_path'].parent}
+    Power method:\t{CPU['power_reading_method']}
+'''
+
 # main
 if __name__ == '__main__':
-    display_cpu_info()
-    debug_info()
+    print(SYSTEM_INFO)
+    debug_power_info()

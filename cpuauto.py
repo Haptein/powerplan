@@ -75,7 +75,7 @@ if __name__ == '__main__':
         log.log_error('Must be run with root provileges.')
 
     if ARGS.info:
-        cpu.display_cpu_info()
+        print(cpu.SYSTEM_INFO)
         exit(0)
     elif ARGS.list:
         pprint(read_config())
