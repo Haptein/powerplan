@@ -35,23 +35,20 @@ optional arguments:
 ## Config guide
 Configuring a profile is simple with the toml format, these are the following configurable properties for profiles:
 
-- **priority:** If several profiles are triggered, the one with the lower value gets selected.
-- **pollingperiod:** Time (ms) between readings, lower makes it more responsive.
-- **cores_online:** Number of physical cores online.
-- **templimit:** Temperature target (not yet implemented).
-- **minfreq:** Minimum CPU frequency (kHz).
-- **maxfreq:** Maximum CPU frequency (kHz).
 - **turbo:** Turbo boost/core on or off.
+- **cores_online:** Number of physical cores online.
+- **minfreq, maxfreq:** CPU frequency (kHz) range.
 - **governor:** Frequency scaling governor.
 - **policy:** Energy performance preference.
-- **triggerapps:** List of process names that trigger the profile.
+- **triggerapps:** List of process names that trigger the profile automatically.
+- **pollingperiod:** Time (ms) between system readings, lower makes it more responsive.
+- **priority:** If several profiles are triggered, the one with the lower value gets selected.
+- **templimit:** Temperature target (not yet implemented).
 
 intel_pstate only:
+- **minperf, maxfreq:** Performance percent range (recommended instead of minfreq/maxfreq). 
+- **tdp_sutained, tdp_burst:** CPU sustained and burst TDP limits (PL1 & PL2) in Watt units.
 
-- **minperf:** Minimum performance percent (recommended instead of minfreq). 
-- **maxperf:** Maximum performance percent (recommended instead of maxfreq).
-- **tdp_sutained:** CPU sustained TDP limit (PL1).
-- **tdp_burst:** CPU burst TDP limit (PL2).
 
 **Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (desktop just use ac_). It's also not necessary to specify every property for new profiles, the missing ones will get filled in by the DEFAULT profile's values.
 
