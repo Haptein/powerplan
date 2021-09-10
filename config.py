@@ -101,7 +101,7 @@ class CpuProfile:
 
     def triggerapp_present(self, procs: set):
         for app in self.triggerapps:
-            if app in procs:
+            if app[:15] in procs:
                 return True
         return False
 
