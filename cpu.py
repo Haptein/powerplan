@@ -239,6 +239,13 @@ def set_policy(policy):
         for core_id in list_cores('online'):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
 
+def read_current_freq(divisor: int = 1) -> dict:
+    ''' Returns dict of core_id:cur_freq, divided by divisor and rounded'''
+    cores_online = list_cores('online')
+    cur_freqs = [int(read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_cur_freq', int) / divisor)
+                 for core_id in cores_online]
+    return dict(zip(cores_online, cur_freqs))
+
 def read_freq_range(core_id: int = 0) -> list:
     scaling_min_freq = read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
     scaling_max_freq = read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq', int)
@@ -427,20 +434,19 @@ def show_system_status(profile):
     power_plan = f'Power plan: {read_governor()}/{read_policy()}'
     power_status = f'Charging: {charging}\t\tBattery draw: {read_power_draw():.1f}W'
 
-    list_cores_online = list_cores('online')
-    cores_online = len(list_cores_online)
+    cores_online = list_cores('online')
+    num_cores_online = len(cores_online)
     # Per cpu stats
     cpus = '\t'.join(['CPU'+str(coreid) for coreid in list_cores('online')])
     utils = '\t'.join([str(util) for util in psutil.cpu_percent(percpu=True)])
 
-    # Read current frequencies and discard 3 digits (round(freq/1000))
-    freq_readings = shell('grep . -h /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq').splitlines()
-    freq_list = [freq_readings[core_id][:-3] for core_id in list_cores_online]
-    avg_freqs = int(sum([int(freq) for freq in freq_list])/cores_online)
-    freqs = '\t'.join(freq_list)
+    # Read current frequencies in MHz
+    freq_list = read_current_freq(divisor=1000).values()
+    avg_freqs = int(sum([freq for freq in freq_list])/num_cores_online)
+    freqs = '\t'.join([str(freq) for freq in freq_list])
 
     # CPU average line
-    cpu_cores_turbo = '\t'.join([f'Cores online: {cores_online}',
+    cpu_cores_turbo = '\t'.join([f'Cores online: {num_cores_online}',
                                  f"Turbo: {'enabled' if read_turbo_state() else 'disabled'}"])
 
     cpu_avg = '\t'.join([f"Avg. Usage: {read_cpu_utilization('avg')}%",
