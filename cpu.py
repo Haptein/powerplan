@@ -5,7 +5,6 @@ import platform
 import subprocess
 from glob import glob
 from os import getuid
-from sys import stdout
 from pathlib import Path
 from datetime import datetime
 from log import log_warning, log_error
@@ -425,8 +424,6 @@ CPU['power_reading_method'] = power_reading_method(bat_path)
 
 def show_system_status(profile):
     '''Prints System status during runtime'''
-    # Clear anything below cursor
-    stdout.write('\033[J')
 
     charging = read_charging_state()
     time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
@@ -453,7 +450,8 @@ def show_system_status(profile):
                          f"Avg. Freq.: {avg_freqs}MHz",
                          f'Package temp: {read_temperature()}°C'])
 
-    status_lines = [active_profile,
+    status_lines = ['',
+                    active_profile,
                     power_plan,
                     power_status,
                     cpu_cores_turbo,
@@ -463,9 +461,9 @@ def show_system_status(profile):
                     utils,
                     freqs]
 
+    subprocess.run('clear')
+    print(SYSTEM_INFO)
     print('\n'.join(status_lines))
-    # Move cursor back for next iteration to clear
-    stdout.write(f'\033[{len(status_lines)}A')
 
 
 def debug_power_info():
