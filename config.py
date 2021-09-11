@@ -74,7 +74,6 @@ class CpuProfile:
 
     def apply(self) -> float:
         ''' Applies profile configuration and returns sleep time needed (after compensation)'''
-        time_start = time()
         charging = cpu.read_charging_state()
         if charging:
             cpu.set_physical_cores_online(self.ac_cores_online)
@@ -83,7 +82,7 @@ class CpuProfile:
             cpu.set_turbo_state(self.ac_turbo)
             cpu.set_governor(self.ac_governor)
             cpu.set_policy(self.ac_policy)
-            polling_period = self.ac_pollingperiod / 1000
+            cpu.set_tdp_limits(self.ac_tdp_sutained, self.ac_tdp_burst)
         else:
             cpu.set_physical_cores_online(self.bat_cores_online)
             cpu.set_freq_range(self.bat_minfreq, self.bat_maxfreq)
@@ -91,14 +90,7 @@ class CpuProfile:
             cpu.set_turbo_state(self.bat_turbo)
             cpu.set_governor(self.bat_governor)
             cpu.set_policy(self.bat_policy)
-            polling_period = self.bat_pollingperiod / 1000
-
-        # Time compensation
-        time_delta = time() - time_start
-        sleep_time = polling_period - time_delta
-        if sleep_time < 0:
-            log_warning(f'Process takes {time_delta} seconds. Polling period is too low.')
-        return sleep_time
+            cpu.set_tdp_limits(self.bat_tdp_sutained, self.bat_tdp_burst)
 
     def triggerapp_present(self, procs: set):
         for app in self.triggerapps:
