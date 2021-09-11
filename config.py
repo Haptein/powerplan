@@ -156,27 +156,38 @@ class CpuProfile:
 
         # Governor available
         if self.ac_governor not in CPU['governors']:
-            error_msg = (f'ac_governor value "{self.ac_governor}"'
+            error_msg = (f'ac_governor value "{self.ac_governor}" '
                          f'in profile "{self.name}" not in available governors.'
                          f'\nAvailable governors: {CPU["governors"]}')
             log_error(error_msg)
         if self.bat_governor not in CPU['governors']:
-            error_msg = (f'bat_governor value "{self.bat_governor}"'
+            error_msg = (f'bat_governor value "{self.bat_governor}" '
                          f'in profile "{self.name}" not in available governors.'
                          f'\nAvailable governors: {CPU["governors"]}')
             log_error(error_msg)
 
         # Policy available
         if self.ac_policy not in CPU['policies']:
-            error_msg = (f'ac_policy value "{self.ac_policy}"'
+            error_msg = (f'ac_policy value "{self.ac_policy}" '
                          f'in profile "{self.name}" not in available policies.'
                          f'\nAvailable policies: {CPU["policies"]}')
             log_error(error_msg)
         if self.bat_policy not in CPU['policies']:
-            error_msg = (f'bat_policy value "{self.bat_policy}"'
+            error_msg = (f'bat_policy value "{self.bat_policy}" '
                          f'in profile "{self.name}" not in available policies.'
                          f'\nAvailable policies: {CPU["policies"]}')
             log_error(error_msg)
+
+        # Governor - Policy compatibility:
+        if self.ac_governor == 'performance':
+            if self.ac_policy != 'performance':
+                log_error(f'ac_governor value {self.ac_governor} is incompatible with ac_policy {self.ac_policy} '
+                          f'in profile "{self.name}".')
+
+        if self.bat_governor == 'performance':
+            if self.bat_policy != 'performance':
+                log_error(f'bat_governor value {self.bat_governor} is incompatible with bat_policy {self.bat_policy} '
+                          f'in profile "{self.name}".')
 
 
 # Config IO
