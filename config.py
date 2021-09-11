@@ -2,7 +2,7 @@
 
 import os
 import toml
-from time import time
+from time import time, sleep
 from dataclasses import dataclass
 from collections import OrderedDict
 
@@ -105,6 +105,16 @@ class CpuProfile:
             if app[:15] in procs:
                 return True
         return False
+
+    def sleep(self, iteration_start, charging_state=None):
+        if charging_state is None:
+            charging_state = cpu.read_charging_state()
+        if charging_state:
+            pollingperiod = self.ac_pollingperiod / 1000
+        else:
+            pollingperiod = self.bat_pollingperiod / 1000
+
+        sleep(max((0, pollingperiod - time() + iteration_start)))
 
     def _check_value_in_range(self, value_name, value, allowed_range) -> bool:
         minimum, maximum = allowed_range

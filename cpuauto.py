@@ -21,13 +21,9 @@ argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload p
 ARGS = argparser.parse_args()
 
 
-def debug_runtime_info(process, profile, sleep_time):
+def debug_runtime_info(process, profile, iteration_start):
     cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(process)
-    charging_state = cpu.read_charging_state()
-    if charging_state:
-        time_iter = profile.ac_pollingperiod - sleep_time*1000
-    else:
-        time_iter = profile.bat_pollingperiod - sleep_time*1000
+    time_iter = (time() - iteration_start) * 1000  # ms
     print(f'\nProcess resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms\n')
 
 def single_activation(profile):
@@ -43,23 +39,21 @@ def main_loop(monitor_mode):
     profiles = read_profiles()
 
     while True:
+        iteration_start = time()
         # Get profile and apply
         if ARGS.reload:
             profiles = read_profiles()
 
         profile = get_triggered_profile(profiles)
         if not monitor_mode:
-            sleep_time = profile.apply()
-        else:
-            sleep_time = [profile.bat_pollingperiod, profile.ac_pollingperiod][cpu.read_charging_state()] / 1000
+            profile.apply()
 
         if ARGS.status:
             cpu.show_system_status(profile)
         if ARGS.debug:
-            debug_runtime_info(process, profile, sleep_time)
+            debug_runtime_info(process, profile, iteration_start)
 
-        if sleep_time > 0:
-            sleep(sleep_time)
+        profile.sleep(iteration_start=iteration_start)
 
 
 if __name__ == '__main__':
