@@ -16,6 +16,7 @@ argparser.add_argument('-l', '--list', action='store_true', help='list profiles 
 argparser.add_argument('-s', '--status', action='store_true', help='show system status')
 argparser.add_argument('-d', '--debug', action='store_true', help="display additional runtime info")
 argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
+argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles (for testing)')
 ARGS = argparser.parse_args()
 
 def get_triggered_profile(PROFILES: dict, PROFILES_SORTED: list):
@@ -54,7 +55,10 @@ def main_loop(monitor_mode):
 
     while True:
         # Get profile and apply
-        profile = get_triggered_profile(profiles, profiles_sorted)
+        if ARGS.reload:
+            profiles = read_profiles()
+
+        profile = get_triggered_profile(profiles)
         if not monitor_mode:
             sleep_time = profile.apply()
         else:
