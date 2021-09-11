@@ -4,6 +4,7 @@ import os
 import toml
 from time import time
 from dataclasses import dataclass
+from collections import OrderedDict
 
 import cpu
 from cpu import CPU
@@ -246,13 +247,28 @@ def read_profiles():
         if profile_name == 'DEFAULT':
             continue
 
-        # Specifying profiles with a few descriptors is allowed,
-        # the rest are filled with values in DEFAULT
+        # Specifying profiles sparsely is allowed,
+        # missing values are filled in by DEFAULT
         full_profile = config['DEFAULT'].copy()
         full_profile.update(config[profile_name])
         PROFILES[profile_name] = CpuProfile(**full_profile)
 
-    return PROFILES
+    # By this point PROFILES is a dict with every profile validated
+    # We return PROFILES as an OrderedDict, ordered by priority ascending (so that lower value go first)
+    sorted_name_profile_pairs = [(profile.name, profile) for profile in sorted(PROFILES.values())]
+    return OrderedDict(sorted_name_profile_pairs)
+
+def get_triggered_profile(profiles: OrderedDict):
+    '''Returns triggered CpuProfile object according to running processes'''
+    # Check running processes
+    procs = cpu.read_procs()
+
+    # check profile trigger apps against procs
+    for cpuprofile in profiles.values():
+        if cpuprofile.triggerapp_present(procs):
+            return cpuprofile
+    else:
+        return profiles['DEFAULT']
 
 
 if __name__ == '__main__':

@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 from sys import exit
-from psutil import Process
+from time import time, sleep
 from argparse import ArgumentParser
+
+from psutil import Process
 
 import log
 import cpu
-from time import sleep
-from config import read_profiles, read_config
+from config import read_profiles, get_triggered_profile
 
 NAME = 'cpuauto.py'
 
@@ -19,17 +20,6 @@ argparser.add_argument('-v', '--version', action='store_true', help='show progra
 argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles (for testing)')
 ARGS = argparser.parse_args()
 
-def get_triggered_profile(PROFILES: dict, PROFILES_SORTED: list):
-    '''Returns triggered CpuProfile object according to running processes'''
-    # Check running processes
-    procs = cpu.read_procs()
-
-    # check profile trigger apps against procs
-    for cpuprofile in PROFILES_SORTED:
-        if cpuprofile.triggerapp_present(procs):
-            return cpuprofile
-    else:
-        return PROFILES['DEFAULT']
 
 def debug_runtime_info(process, profile, sleep_time):
     cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(process)
@@ -51,7 +41,6 @@ def single_activation(profile):
 def main_loop(monitor_mode):
     process = Process()
     profiles = read_profiles()
-    profiles_sorted = sorted(profiles.values())
 
     while True:
         # Get profile and apply
@@ -79,9 +68,9 @@ if __name__ == '__main__':
 
     # List profiles and exit
     if ARGS.list:
-        config = read_config()
-        for profile_name in config:
-            print(profile_name)
+        profiles = read_profiles()
+        for name in profiles:
+            print(name)
         exit(0)
 
     # Activate profile and exit
