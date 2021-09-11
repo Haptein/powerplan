@@ -5,6 +5,7 @@ import platform
 import subprocess
 from glob import glob
 from os import getuid
+from time import time
 from pathlib import Path
 from datetime import datetime
 from log import log_warning, log_error
@@ -145,6 +146,42 @@ def read_power_draw() -> bool:
         return float(current_data) * float(voltage_data) / 10**12
     else:
         return -1
+
+# Rapl
+
+class Rapl:
+    def __init__(self):
+        self.package_energy_now = Path('/sys/class/powercap/intel-rapl:0/energy_uj')
+        package_enabled = self.package_energy_now.with_name('enabled')
+        if self.package_energy_now.exists() and package_enabled.exists() and '1' in package_enabled.read_text():
+            self.enabled = True
+            self.max_energy = int(package_enabled.with_name('max_energy_range_uj').read_text())
+            self.last_energy = int(self.package_energy_now.read_text())
+            self.last_time = time()
+        else:
+            self.enabled = False
+
+    def read_power(self):
+        if not self.enabled:
+            return -1
+
+        # Read
+        current_energy = int(self.package_energy_now.read_text())
+        current_time = time()
+        # Compute
+        if current_energy < self.last_energy:
+            # Energy counter overflowed
+            current_energy += self.max_energy - self.last_energy
+
+        energy_delta = current_energy - self.last_energy
+        time_delta = current_time - self.last_time
+        current_power = energy_delta / time_delta / 10**6 # in Watt
+
+        # Update
+        self.last_energy = current_energy
+        self.last_time = current_time
+
+        return current_power
 
 # CPU
 
@@ -333,9 +370,12 @@ def set_tdp_limits(PL1: int, PL2: int):
         PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
         PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
         if PL1_path.exists() and PL2_path.exists():
-            PL1_path.write_text(str(PL1*1000000))
-            PL2_path.write_text(str(PL2*1000000))
-            PL1_path.with_name('enabled').write_text('1')
+            if PL1 > 0:
+                PL1_path.write_text(str(PL1*1000000))
+            if PL2 > 0:
+                PL2_path.write_text(str(PL2*1000000))
+            if PL1 > 0 or PL2 > 0:
+                PL1_path.with_name('enabled').write_text('1')
 
 
 # CPU: dict, stores all cpu_specs / Path_objs (except for individual core ones)
@@ -422,6 +462,8 @@ CPU['ac_path'] = ac_path
 CPU['bat_path'] = bat_path
 CPU['power_reading_method'] = power_reading_method(bat_path)
 
+
+RAPL = Rapl()
 def show_system_status(profile):
     '''Prints System status during runtime'''
 
@@ -430,6 +472,8 @@ def show_system_status(profile):
     active_profile = f'{time_now}\t\tActive: {profile.name}'
     power_plan = f'Power plan: {read_governor()}/{read_policy()}'
     power_status = f'Charging: {charging}\t\tBattery draw: {read_power_draw():.1f}W'
+    if RAPL.enabled:
+        power_status += f'\tPackage: {RAPL.read_power():.2f}W'
 
     cores_online = list_cores('online')
     num_cores_online = len(cores_online)
