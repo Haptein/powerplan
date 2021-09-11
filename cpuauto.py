@@ -94,7 +94,10 @@ if __name__ == '__main__':
     if ARGS.status:
         print(cpu.SYSTEM_INFO)
 
-    main_loop(monitor_mode)
+    try:
+        main_loop(monitor_mode)
+    except KeyboardInterrupt:
+        exit(0)
 
     # Sorted by priority
     # TRIGGER_PROCS = { cpuprofile.triggerapps for cpuprofile in PROFILES_SORTED}
