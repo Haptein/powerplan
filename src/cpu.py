@@ -28,6 +28,9 @@ SYSTEM_DIR = '/sys/devices/system/'
 CPU_DIR = SYSTEM_DIR + 'cpu/'
 CPUFREQ_DIR = CPU_DIR + 'cpu0/cpufreq/'
 
+# the order in this list embodies priority
+ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
+
 # Interface
 PIPE = subprocess.PIPE
 
@@ -79,7 +82,7 @@ def power_supply_detection() -> tuple:
 
     return ac_device_path, bat_device_path
 
-def power_reading_method(bat_device_path):
+def power_reading_method(bat_device_path=None):
     '''
     Tests possible power reading paths
     returns ['power', 'current_and_voltage', None]
@@ -153,8 +156,8 @@ class Rapl:
     def __init__(self):
         self.package_energy_now = Path('/sys/class/powercap/intel-rapl:0/energy_uj')
         package_enabled = self.package_energy_now.with_name('enabled')
-        needed_paths_exist = self.package_energy_now.exists() and package_enabled.exists() and '1' in package_enabled.read_text()
-        if needed_paths_exist and is_root():
+        needed_paths_exist = self.package_energy_now.exists() and package_enabled.exists()
+        if needed_paths_exist and is_root() and '1' in package_enabled.read_text():
             self.enabled = True
             self.max_energy = int(package_enabled.with_name('max_energy_range_uj').read_text())
             self.last_energy = int(self.package_energy_now.read_text())
@@ -228,29 +231,19 @@ def read_cpu_utilization(mode='max'):
 
 def read_temperature() -> float:
     temperature_sensors = psutil.sensors_temperatures()
-    allowed_sensors = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
 
-    for sensor in allowed_sensors:
-        if sensor not in temperature_sensors:
-            continue
-        return temperature_sensors[sensor][0].current
+    for sensor in ALLOWED_TEMP_SENSORS:
+        if sensor in temperature_sensors:
+            return temperature_sensors[sensor][0].current
     else:
-        msg = ("Couldn't detect a known CPU temperature sensor."
-               f"\n\tKnown CPU temp sensors are: {allowed_sensors}"
-               f"\n\tDetected sensors were: {temperature_sensors.keys()}"
-               "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
-        log_warning(msg)
         return -1
 
 def read_crit_temp() -> int:
-    core_temp = psutil.sensors_temperatures()
+    temperature_sensors = psutil.sensors_temperatures()
 
-    # the order in this list embodies priority
-    cpu_temp_names = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
-
-    for name in cpu_temp_names:
-        if name in core_temp:
-            return int(core_temp[name][0].critical)
+    for sensor in ALLOWED_TEMP_SENSORS:
+        if sensor in temperature_sensors:
+            return int(temperature_sensors[sensor][0].critical)
     else:
         # If no crit temp found default to 100
         return 100
@@ -465,6 +458,19 @@ CPU['power_reading_method'] = power_reading_method(bat_path)
 
 # Initialize Rapl object
 RAPL = Rapl()
+
+
+# Checks
+if CPU['power_reading_method'] is None:
+    log_warning('No power reading method available.')
+
+present_temperature_sensors = psutil.sensors_temperatures().keys()
+if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):
+    msg = ("Couldn't detect a known CPU temperature sensor."
+           f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
+           f"\n\tDetected sensors were: {present_temperature_sensors}"
+           "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
+    log_warning(msg)
 
 
 def show_system_status(profile):
