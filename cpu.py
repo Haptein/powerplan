@@ -169,13 +169,12 @@ class Rapl:
         current_energy = int(self.package_energy_now.read_text())
         current_time = time()
         # Compute
-        if current_energy < self.last_energy:
-            # Energy counter overflowed
-            current_energy += self.max_energy - self.last_energy
-
         energy_delta = current_energy - self.last_energy
         time_delta = current_time - self.last_time
-        current_power = energy_delta / time_delta / 10**6 # in Watt
+        if current_energy < self.last_energy:
+            # Energy counter overflowed
+            energy_delta += self.max_energy
+        current_power = energy_delta / time_delta / 10**6  # in Watt
 
         # Update
         self.last_energy = current_energy
