@@ -473,7 +473,7 @@ if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):
     log_warning(msg)
 
 
-def show_system_status(profile):
+def show_system_status(profile, monitor_mode=False):
     '''Prints System status during runtime'''
 
     charging = read_charging_state()
@@ -503,6 +503,7 @@ def show_system_status(profile):
                          f"Avg. Freq.: {avg_freqs}MHz",
                          f'Package temp: {read_temperature()}°C'])
 
+    monitor_mode_indicator = '[MONITOR MODE]' if monitor_mode else ''
     status_lines = ['',
                     active_profile,
                     power_plan,
@@ -515,6 +516,7 @@ def show_system_status(profile):
                     freqs]
 
     subprocess.run('clear')
+    print(monitor_mode_indicator)
     print(SYSTEM_INFO)
     print('\n'.join(status_lines))
 

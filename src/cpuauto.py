@@ -9,11 +9,11 @@ import log
 import cpu
 from config import read_profiles, get_triggered_profile
 
-NAME = 'cpuauto.py'
+NAME = 'cpuauto'
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-l', '--list', action='store_true', help='list profiles and exit')
-argparser.add_argument('-s', '--status', action='store_true', help='show system status')
+argparser.add_argument('-s', '--status', action='store_true', help='show system status while running')
 argparser.add_argument('-p', '--profile', default='', help='activate a given profile and exit')
 argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
@@ -52,7 +52,7 @@ def main_loop(monitor_mode):
 
         # Everything else
         if ARGS.status:
-            cpu.show_system_status(profile)
+            cpu.show_system_status(profile, monitor_mode)
         if ARGS.debug:
             debug_runtime_info(process, profile, iteration_start)
 
@@ -89,7 +89,8 @@ if __name__ == '__main__':
             print('An instance of cpuauto is already running. This one will just report system status.')
             monitor_mode = True
         else:
-            log.log_error('An instance of cpuatuto is already running.')
+            log.log_error('An instance of cpuauto is already running.\n'
+                          'You can still monitor system status with: cpuauto --status')
     else:
         monitor_mode = False
 
@@ -101,6 +102,3 @@ if __name__ == '__main__':
         main_loop(monitor_mode)
     except KeyboardInterrupt:
         exit(0)
-
-    # Sorted by priority
-    # TRIGGER_PROCS = { cpuprofile.triggerapps for cpuprofile in PROFILES_SORTED}
