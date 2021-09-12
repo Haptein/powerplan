@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from sys import exit
 from time import time
-from argparse import ArgumentParser
+from argparse import ArgumentParser, SUPPRESS
 
 from psutil import Process
 
@@ -12,19 +12,20 @@ from config import read_profiles, get_triggered_profile
 NAME = 'cpuauto.py'
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
-argparser.add_argument('-p', '--profile', default='', help='activate a given profile and exit')
 argparser.add_argument('-l', '--list', action='store_true', help='list profiles and exit')
 argparser.add_argument('-s', '--status', action='store_true', help='show system status')
-argparser.add_argument('-d', '--debug', action='store_true', help="display additional runtime info")
+argparser.add_argument('-p', '--profile', default='', help='activate a given profile and exit')
+argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles')
+argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
+argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
-argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles (for testing)')
 ARGS = argparser.parse_args()
 
 
 def debug_runtime_info(process, profile, iteration_start):
     cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(process)
     time_iter = (time() - iteration_start) * 1000  # ms
-    print(f'\nProcess resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms\n')
+    print(f'Process resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms')
 
 def single_activation(profile):
     profiles = read_profiles()
@@ -62,6 +63,11 @@ def main_loop(monitor_mode):
 if __name__ == '__main__':
     if not cpu.is_root():
         log.log_error('Must be run with root provileges.')
+
+    if ARGS.uninstall:
+        cpu.shell('/opt/cpuauto/uninstall')
+        print('SEE YOU SPACE COWBOY...')
+        exit(0)
 
     # List profiles and exit
     if ARGS.list:

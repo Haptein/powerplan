@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+rm /usr/bin/cpuauto
+rm -r /opt/cpuauto
+

@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+mkdir /opt/cpuauto/
+mkdir /opt/cpuauto/src/
+cp -r src/*.py /opt/cpuauto/src/
+cp -r uninstall /opt/cpuauto/uninstall
+cp LICENSE /opt/cpuauto/LICENSE
+ln -s /opt/cpuauto/src/cpuauto.py /usr/bin/cpuauto
+chmod 755 /opt/cpuauto/src/cpuauto.py
+chmod 755 /opt/cpuauto/uninstall
+chmod 755 /usr/bin/cpuauto

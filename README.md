@@ -16,20 +16,30 @@ These are the configurable options:
 - Frequency scaling governors
 - Energy performance preference
 
+## How to
+```
+# install
+git clone https://github.com/Haptein/cpuauto.git
+cd cpuauto && sudo ./install
+
+# uninstall
+sudo cpuauto --uninstall
+```
 
 ## Usage
 ```
-usage: cpuauto.py [-h] [-p PROFILE] [-l] [-s] [-d] [-v]
+usage: cpuauto [-h] [-l] [-s] [-p PROFILE] [-r] [--uninstall] [-v]
 
 Automatic CPU power configuration control.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -p PROFILE, --profile PROFILE
-                        activate a given profile and exit
   -l, --list            list profiles and exit
   -s, --status          show system status
-  -d, --debug           display additional runtime info
+  -p PROFILE, --profile PROFILE
+                        activate a given profile and exit
+  -r, --reload          hot-reload profiles (for testing)
+  --uninstall           uninstall program
   -v, --version         show program version and exit
 ```
 
@@ -52,24 +62,3 @@ intel_pstate only:
 
 
 **Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (desktop just use ac_). It's also not necessary to specify every property for new profiles, the missing ones will get filled in by the DEFAULT profile's values.
-
-
-# TODO
-
-### Core Function
-- Performance Logging/Monitoring
-- CPU profiling
-- Error Logging
-- Temperature control system
-
-### QoL
-- Only log temperature sensor warning on initialization, sensor detection at init
-- Warn if no power reading method available
-- Look further into optimization
-- Profile editing GUI
-
-## Proyect Structure:
-    - cpuauto : main file
-    - cpu : cpu API
-    - config : well, umm config stuffs.
-    - log : error and performance logging, basically a placeholder for now.

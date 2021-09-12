@@ -10,8 +10,7 @@ import cpu
 from cpu import CPU
 from log import log_error
 
-CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = CONFIG_DIR + "/cpuauto.toml"
+CONFIG_PATH = '/etc/cpuauto.toml'
 
 DEFAULT_CONFIG = dict(DEFAULT=dict(
     priority=99,
@@ -228,7 +227,6 @@ def read_config():
 
 def write_config(config):
     '''Writes a dict as a toml file'''
-    os.makedirs(CONFIG_DIR, exist_ok=True)
     with open(CONFIG_PATH, "w") as file:
         toml.dump(config, file)
 

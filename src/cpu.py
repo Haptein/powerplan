@@ -153,7 +153,8 @@ class Rapl:
     def __init__(self):
         self.package_energy_now = Path('/sys/class/powercap/intel-rapl:0/energy_uj')
         package_enabled = self.package_energy_now.with_name('enabled')
-        if self.package_energy_now.exists() and package_enabled.exists() and '1' in package_enabled.read_text():
+        needed_paths_exist = self.package_energy_now.exists() and package_enabled.exists() and '1' in package_enabled.read_text()
+        if needed_paths_exist and is_root():
             self.enabled = True
             self.max_energy = int(package_enabled.with_name('max_energy_range_uj').read_text())
             self.last_energy = int(self.package_energy_now.read_text())
@@ -462,7 +463,10 @@ CPU['bat_path'] = bat_path
 CPU['power_reading_method'] = power_reading_method(bat_path)
 
 
+# Initialize Rapl object
 RAPL = Rapl()
+
+
 def show_system_status(profile):
     '''Prints System status during runtime'''
 
@@ -509,12 +513,6 @@ def show_system_status(profile):
     print('\n'.join(status_lines))
 
 
-def debug_power_info():
-    # POWER SUPPLY TREE
-    power_supply_info = shell('grep . /sys/class/power_supply/*/* -d skip')
-    [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
-
-
 SYSTEM_INFO = f'''
     System
     OS:\t\t\t{platform.platform()}
@@ -533,6 +531,13 @@ SYSTEM_INFO = f'''
     Battery:\t\t{CPU['bat_path'].parent}
     Power method:\t{CPU['power_reading_method']}
 '''
+
+
+def debug_power_info():
+    # POWER SUPPLY TREE
+    power_supply_info = shell('grep . /sys/class/power_supply/*/* -d skip')
+    [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
+
 
 # main
 if __name__ == '__main__':
