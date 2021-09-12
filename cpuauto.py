@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from sys import exit
-from time import time, sleep
+from time import time
 from argparse import ArgumentParser
 
 from psutil import Process
@@ -40,19 +40,22 @@ def main_loop(monitor_mode):
 
     while True:
         iteration_start = time()
-        # Get profile and apply
+
         if ARGS.reload:
             profiles = read_profiles()
 
+        # Get profile and apply
         profile = get_triggered_profile(profiles)
         if not monitor_mode:
             profile.apply()
 
+        # Everything else
         if ARGS.status:
             cpu.show_system_status(profile)
         if ARGS.debug:
             debug_runtime_info(process, profile, iteration_start)
 
+        # Then sleep needed time
         profile.sleep(iteration_start=iteration_start)
 
 

@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 import cpu
 from cpu import CPU
-from log import log_error, log_warning
+from log import log_error
 
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = CONFIG_DIR + "/cpuauto.toml"

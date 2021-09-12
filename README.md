@@ -57,20 +57,16 @@ intel_pstate only:
 # TODO
 
 ### Core Function
-- Look into Demand/Power curves
-- Look into Demand/Corecount curves
-- Temperature control system
-
-### Diagnostics
-- Error Logging
 - Performance Logging/Monitoring
-- Proper CLI monitor mode
+- CPU profiling
+- Error Logging
+- Temperature control system
 
 ### QoL
 - Only log temperature sensor warning on initialization, sensor detection at init
 - Warn if no power reading method available
-- Profile editing GUI
 - Look further into optimization
+- Profile editing GUI
 
 ## Proyect Structure:
     - cpuauto : main file
