@@ -7,13 +7,14 @@ from psutil import Process
 
 import log
 import cpu
+import info
 from config import read_profiles, get_triggered_profile
 
 NAME = 'cpuauto'
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-l', '--list', action='store_true', help='list profiles and exit')
-argparser.add_argument('-s', '--status', action='store_true', help='show system status while running')
+argparser.add_argument('-s', '--status', action='store_true', help="show system status, won't apply profiles if another instance is already running")
 argparser.add_argument('-p', '--profile', default='', help='activate a given profile and exit')
 argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
@@ -52,7 +53,7 @@ def main_loop(monitor_mode):
 
         # Everything else
         if ARGS.status:
-            cpu.show_system_status(profile, monitor_mode)
+            info.show_system_status(profile, monitor_mode)
         if ARGS.debug:
             debug_runtime_info(process, profile, iteration_start)
 
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     if ARGS.profile:
         single_activation(ARGS.profile)
         if ARGS.status:
-            cpu.show_system_status()
+            info.show_system_status()
         exit(0)
 
     # Check if cpuauto is already running
@@ -95,8 +96,10 @@ if __name__ == '__main__':
         monitor_mode = False
 
     # System info
-    if ARGS.status:
-        print(cpu.SYSTEM_INFO)
+    if ARGS.status or ARGS.debug:
+        print(info.SYSTEM_INFO)
+    if ARGS.debug:
+        info.debug_power_info()
 
     try:
         main_loop(monitor_mode)

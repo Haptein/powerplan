@@ -1,16 +1,14 @@
 #!/usr/bin/python3
 
 import psutil
-import platform
 import subprocess
 from glob import glob
 from os import getuid
 from time import time
 from pathlib import Path
-from datetime import datetime
+
 from log import log_warning, log_error
 
-VERSION = '0.1'
 
 '''
 File structure:
@@ -459,7 +457,6 @@ CPU['power_reading_method'] = power_reading_method(bat_path)
 # Initialize Rapl object
 RAPL = Rapl()
 
-
 # Checks
 if CPU['power_reading_method'] is None:
     log_warning('No power reading method available.')
@@ -472,83 +469,3 @@ if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):
            "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
     log_warning(msg)
 
-
-def show_system_status(profile, monitor_mode=False):
-    '''Prints System status during runtime'''
-
-    charging = read_charging_state()
-    time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
-    active_profile = f'{time_now}\t\tActive: {profile.name}'
-    power_plan = f'Power plan: {read_governor()}/{read_policy()}'
-    power_status = f'Charging: {charging}\t\tBattery draw: {read_power_draw():.1f}W'
-    if RAPL.enabled:
-        power_status += f'\tPackage: {RAPL.read_power():.2f}W'
-
-    cores_online = list_cores('online')
-    num_cores_online = len(cores_online)
-    # Per cpu stats
-    cpus = '\t'.join(['CPU'+str(coreid) for coreid in list_cores('online')])
-    utils = '\t'.join([str(util) for util in psutil.cpu_percent(percpu=True)])
-
-    # Read current frequencies in MHz
-    freq_list = read_current_freq(divisor=1000).values()
-    avg_freqs = int(sum([freq for freq in freq_list])/num_cores_online)
-    freqs = '\t'.join([str(freq) for freq in freq_list])
-
-    # CPU average line
-    cpu_cores_turbo = '\t'.join([f'Cores online: {num_cores_online}',
-                                 f"Turbo: {'enabled' if read_turbo_state() else 'disabled'}"])
-
-    cpu_avg = '\t'.join([f"Avg. Usage: {read_cpu_utilization('avg')}%",
-                         f"Avg. Freq.: {avg_freqs}MHz",
-                         f'Package temp: {read_temperature()}°C'])
-
-    monitor_mode_indicator = '[MONITOR MODE]' if monitor_mode else ''
-    status_lines = ['',
-                    active_profile,
-                    power_plan,
-                    power_status,
-                    cpu_cores_turbo,
-                    cpu_avg,
-                    '',
-                    cpus,
-                    utils,
-                    freqs]
-
-    subprocess.run('clear')
-    print(monitor_mode_indicator)
-    print(SYSTEM_INFO)
-    print('\n'.join(status_lines))
-
-
-SYSTEM_INFO = f'''
-    System
-    OS:\t\t\t{platform.platform()}
-    cpuauto:\t\t{VERSION} running on Python{platform.python_version()}
-    CPU model:\t\t{CPU['name']}
-    Core configuraton:\t{CPU['physical_cores']}/{len(list_cores())}\
-    {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU['thread_siblings']])}
-    Frequency range:\t{CPU['freq_info']}
-    Driver:\t\t{CPU['scaling_driver']}
-    Governors:\t\t{', '.join(CPU['governors'])}
-    Policies:\t\t{', '.join(CPU['policies'])}
-
-    Paths
-    Turbo:\t\t{CPU['turbo_path']}
-    AC adapter:\t\t{CPU['ac_path'].parent}
-    Battery:\t\t{CPU['bat_path'].parent}
-    Power method:\t{CPU['power_reading_method']}
-'''
-
-
-def debug_power_info():
-    # POWER SUPPLY TREE
-    power_supply_info = shell('grep . /sys/class/power_supply/*/* -d skip')
-    [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
-
-
-# main
-if __name__ == '__main__':
-    print(SYSTEM_INFO)
-    debug_power_info()
-    show_system_status()
