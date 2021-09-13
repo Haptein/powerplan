@@ -17,6 +17,7 @@ argparser.add_argument('-l', '--list', action='store_true', help='list profiles 
 argparser.add_argument('-s', '--status', action='store_true', help="show system status, won't apply profiles if another instance is already running")
 argparser.add_argument('-p', '--profile', default='', help='activate a given profile and exit')
 argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles')
+argparser.add_argument('-b', '--benchmark', action='store_true', help='Stresses CPU and records power/performance metrics to a csv file')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
@@ -83,6 +84,11 @@ if __name__ == '__main__':
         if ARGS.status:
             info.show_system_status()
         exit(0)
+
+    # benchmark
+    if ARGS.benchmark:
+        # Note: still need to add arguments to cli
+        info.profile_system()
 
     # Check if cpuauto is already running
     if cpu.process_instances(NAME) > 1:
