@@ -175,10 +175,10 @@ def profile_system(threads: list = [1, 2, 4, 6], T=0.2, step_time=10, step_freq=
                 while time()-freq_iter_start < step_time:
                     iter_start = time()
                     status.update(running_threads=n_threads)
-                    status.display()
                     sleep_time = T - time() + iter_start
                     if sleep_time > 0:
                         sleep(sleep_time)
+                status.display()
             pool.terminate()
 
     except KeyboardInterrupt:

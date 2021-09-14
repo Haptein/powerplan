@@ -468,4 +468,3 @@ if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):
            f"\n\tDetected sensors were: {present_temperature_sensors}"
            "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
     log_warning(msg)
-

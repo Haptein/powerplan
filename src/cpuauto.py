@@ -89,6 +89,7 @@ if __name__ == '__main__':
     if ARGS.benchmark:
         # Note: still need to add arguments to cli
         info.profile_system()
+        exit(0)
 
     # Check if cpuauto is already running
     if cpu.process_instances(NAME) > 1:
