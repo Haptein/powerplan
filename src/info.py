@@ -127,7 +127,7 @@ class Status:
         self.time = [t-self.time[0] for t in self.time]
         with open(file_name, 'w', newline='') as file:
             writer = csv.writer(file, delimiter=',')
-            writer.writerow(['time', 'freq_lim', 'max_freq', 'avg_freq',
+            writer.writerow(['time', 'running_threads', 'freq_lim', 'max_freq', 'avg_freq',
                              'avg_util', 'package_power', 'battery_power', 'package_temp'])
             writer.writerows(list(zip(self.time, self.running_threads, self.freq_lim, self.max_freq, self.avg_freq,
                                       self.avg_util, self.package_power, self.battery_power, self.package_temp)))
