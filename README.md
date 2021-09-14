@@ -21,30 +21,38 @@ These are the configurable options:
 # install
 git clone https://github.com/Haptein/cpuauto.git
 cd cpuauto && sudo ./install
+```
+**Dependencies:**
+- psutil
+- pytoml
+  
 
+```
 # uninstall
 sudo cpuauto --uninstall
 ```
 
 ## Usage
+
 ```
-usage: cpuauto [-h] [-l] [-s] [-p PROFILE] [-r] [--uninstall] [-v]
+usage: cpuauto [-h] [-l] [-s] [-p PROFILE] [-r] [-b] [--uninstall] [-v]
 
 Automatic CPU power configuration control.
 
 optional arguments:
   -h, --help            show this help message and exit
   -l, --list            list profiles and exit
-  -s, --status          show system status
+  -s, --status          show system status, won't apply profiles if another instance is already running
   -p PROFILE, --profile PROFILE
                         activate a given profile and exit
-  -r, --reload          hot-reload profiles (for testing)
+  -r, --reload          hot-reload profiles
+  -b, --benchmark       Stresses CPU and records power/performance metrics to a csv file
   --uninstall           uninstall program
   -v, --version         show program version and exit
 ```
 
 ## Config guide
-Configuring a profile is simple with the toml format, these are the following configurable properties for profiles:
+Configuring a profile is simple with the [toml](https://github.com/toml-lang/toml#example) format, these are the following configurable properties for profiles:
 
 - **turbo:** Turbo boost/core on or off.
 - **cores_online:** Number of physical cores online.

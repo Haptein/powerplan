@@ -1,18 +1,20 @@
 
 ## Proyect Structure:
     - cpuauto : main file
-    - cpu : cpu API
-    - config : well, umm config stuffs.
-    - log : error and performance logging, basically a placeholder for now.
+    - cpu : processor configuration API
+    - config : reading and parsing of profile data
+    - info : anything that displays or manages cpu config information
+    - log : error and performance logging, basically a placeholder for now
+    
 
 
 ## TODO
 
 ### Core Function
-- Performance Logging/Monitoring
-- CPU profiling
+- implement daemon (systemd)
+- CPU profiling (researching...)
 - Error Logging
-- Temperature control system
+- Temperature control system (researching...)
 
 ### QoL
 - Look further into optimization
