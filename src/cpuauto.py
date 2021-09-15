@@ -63,13 +63,7 @@ def main_loop(monitor_mode):
 
 
 if __name__ == '__main__':
-    if not cpu.is_root():
-        log.log_error('Must be run with root provileges.')
-
-    if ARGS.uninstall:
-        cpu.shell('/opt/cpuauto/uninstall')
-        print('SEE YOU SPACE COWBOY...')
-        exit(0)
+    # Stuff that doesn't need root
 
     # List profiles and exit
     if ARGS.list:
@@ -78,12 +72,31 @@ if __name__ == '__main__':
             print(name)
         exit(0)
 
+    # Version
+    if ARGS.version:
+        print(info.VERSION)
+        exit(0)
+
+    # Stuff that needs root
+    if not cpu.is_root():
+        log.log_error('Must be run with root provileges.')
+
+    if ARGS.uninstall:
+        cpu.shell('/opt/cpuauto/uninstall')
+        print('SEE YOU SPACE COWBOY...')
+        exit(0)
+
     # Activate profile and exit
     if ARGS.profile:
         single_activation(ARGS.profile)
         if ARGS.status:
             info.show_system_status()
         exit(0)
+
+    # Debug info
+    if ARGS.debug:
+        print(info.SYSTEM_INFO)
+        info.debug_power_info()
 
     # benchmark
     if ARGS.benchmark:
@@ -101,12 +114,6 @@ if __name__ == '__main__':
                           'You can still monitor system status with: cpuauto --status')
     else:
         monitor_mode = False
-
-    # System info
-    if ARGS.status or ARGS.debug:
-        print(info.SYSTEM_INFO)
-    if ARGS.debug:
-        info.debug_power_info()
 
     try:
         main_loop(monitor_mode)
