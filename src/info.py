@@ -86,6 +86,7 @@ def debug_power_info():
     # POWER SUPPLY TREE
     power_supply_info = cpu.shell('grep . /sys/class/power_supply/*/* -d skip')
     [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
+    print(f'Present temperature sensors: {list(cpu.present_temperature_sensors)}')
 
 
 # CPU power / performance profiling
