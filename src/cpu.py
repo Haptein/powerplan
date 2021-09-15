@@ -7,7 +7,7 @@ from os import getuid
 from time import time
 from pathlib import Path
 
-from log import log_warning, log_error
+from log import log_warning
 
 
 '''
@@ -18,6 +18,7 @@ SYSTEM
 CPU INPUT
 CPU OUTPUT
 CPU
+RAPL
 '''
 
 # PATHS
@@ -374,10 +375,6 @@ def set_tdp_limits(PL1: int, PL2: int):
 if is_root():
     # Setting all cores online is needed for accurate physical/logical/sibling info retrival
     set_all_cores_online()
-else:
-    if list_cores('offline'):
-        log_error('Root privileges needed. CPU topology can\'t be read properly since there are offline cores.')
-    log_warning('Root privileges needed. Can\'t tell if turbo is available.')
 
 CPU = dict(
     name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
