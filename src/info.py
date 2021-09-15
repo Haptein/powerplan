@@ -64,7 +64,7 @@ def show_system_status(profile, monitor_mode=False):
                          f"Avg. Freq.: {avg_freqs}MHz",
                          f'Package temp: {cpu.read_temperature()}°C'])
 
-    monitor_mode_indicator = '[MONITOR MODE]' if monitor_mode else ''
+    monitor_mode_indicator = '[MONITOR MODE]' if monitor_mode else '[ACTIVE MODE]'
     status_lines = ['',
                     active_profile,
                     power_plan,
