@@ -91,6 +91,21 @@ if __name__ == '__main__':
         cpu.shell('/opt/cpuauto/enable-daemon')
         exit(0)
 
+    # Check if cpuauto is already running
+    if cpu.process_instances(NAME) > 1:
+        # Monitor mode
+        if ARGS.status:
+            print('An instance of cpuauto is already running. This one will just report system status.')
+            monitor_mode = True
+        elif ARGS.profile:
+            # Profile will be overriden
+            log.log_warning('Single profile activation will get overwritten by the already running instance.')
+        else:
+            log.log_error('An instance of cpuauto is already running.\n'
+                          'You can still monitor system status with: cpuauto --status')
+    else:
+        monitor_mode = False
+
     # Activate profile and exit
     if ARGS.profile:
         single_activation(ARGS.profile)
