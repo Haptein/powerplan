@@ -124,17 +124,6 @@ if __name__ == '__main__':
         info.profile_system()
         exit(0)
 
-    # Check if cpuauto is already running
-    if cpu.process_instances(NAME) > 1:
-        if ARGS.status:
-            print('An instance of cpuauto is already running. This one will just report system status.')
-            monitor_mode = True
-        else:
-            log.log_error('An instance of cpuauto is already running.\n'
-                          'You can still monitor system status with: cpuauto --status')
-    else:
-        monitor_mode = False
-
     try:
         main_loop(monitor_mode)
     except KeyboardInterrupt:
