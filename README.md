@@ -35,24 +35,42 @@ sudo cpuauto --uninstall
 ## Usage
 
 ```
-usage: cpuauto [-h] [-l] [-s] [-p PROFILE] [-r] [-b] [--uninstall] [-v]
+usage: cpuauto [-h] [-l] [-s] [-p PROFILE] [-r] [-b] [--daemon] [--uninstall] [-v]
 
 Automatic CPU power configuration control.
 
 optional arguments:
   -h, --help            show this help message and exit
   -l, --list            list profiles and exit
-  -s, --status          show system status, won't apply profiles if another instance is already running
+  -s, --status          display system status periodically
   -p PROFILE, --profile PROFILE
-                        activate a given profile and exit
-  -r, --reload          hot-reload profiles
-  -b, --benchmark       Stresses CPU and records power/performance metrics to a csv file
+                        activate the specified profile and exit
+  -r, --reload          enable config file hot-reloading
+  -b, --benchmark       stresses CPU and records power/performance metrics to a csv file
+  --daemon              install and enable cpuauto as a daemon (systemd)
   --uninstall           uninstall program
   -v, --version         show program version and exit
 ```
 
+### Main modes:
+**default mode:**
+cpuauto will periodically monitor cpu temps, runnining processes, and charging state to switch between the  profiles specified in /etc/cpuauto.toml.
+
+**--daemon:**
+cpuauto will install and enable itself as a systemd daemon. It runs exactly as if no arguments were provided, at boot time.
+
+**--status**
+cpuauto displays system configuration periodically. It will also apply such configurations (active mode) unless an instance of cpuauto is already running (monitor mode).
+
+**--profile**
+Single profile activation mode. Useful if you'd rather define profiles and switch between them manually.
+
+**--reload**
+Enable hot-reloading the configuration file. Usefull for trying out different profile paremeters.
+
+
 ## Config guide
-Configuring a profile is simple with the [toml](https://github.com/toml-lang/toml#example) format, these are the following configurable properties for profiles:
+The configuration is located in **/etc/cpuauto.toml**. A DEFAULT profile is included and is defined with parameters specific to your machine's CPU. Creating your own profiles (or editing the DEFAULT one) is simple with the [toml](https://github.com/toml-lang/toml#example) format. The parameters:
 
 - **turbo:** Turbo boost/core on or off.
 - **cores_online:** Number of physical cores online.
@@ -65,8 +83,8 @@ Configuring a profile is simple with the [toml](https://github.com/toml-lang/tom
 - **templimit:** Temperature target (not yet implemented).
 
 intel_pstate only:
-- **minperf, maxfreq:** Performance percent range (recommended instead of minfreq/maxfreq). 
+- **minperf, maxfreq:** Performance percent range (recommended instead of minfreq/maxfreq).
 - **tdp_sutained, tdp_burst:** CPU sustained and burst TDP limits (PL1 & PL2) in Watt units.
 
-
-**Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (desktop just use ac_). It's also not necessary to specify every property for new profiles, the missing ones will get filled in by the DEFAULT profile's values.
+  
+**Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (use ac_ for desktop). It's also not necessary to specify every property for new profiles, the missing ones will get filled in by the DEFAULT profile's values.
