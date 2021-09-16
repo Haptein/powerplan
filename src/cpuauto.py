@@ -20,6 +20,7 @@ argparser.add_argument('-r', '--reload', action='store_true', help='enable confi
 argparser.add_argument('-b', '--benchmark', action='store_true', help='stresses CPU and records power/performance metrics to a csv file')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
 argparser.add_argument('--daemon', action='store_true', help='install and enable cpuauto as a daemon (systemd)')
+argparser.add_argument('--log', action='store_true', help='print daemon log.')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
 ARGS = argparser.parse_args()
@@ -76,6 +77,10 @@ if __name__ == '__main__':
     # Version
     if ARGS.version:
         print(info.VERSION)
+        exit(0)
+
+    if ARGS.log:
+        info.print_log()
         exit(0)
 
     # Stuff that needs root

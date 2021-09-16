@@ -1,6 +1,7 @@
 import csv
 import platform
 import subprocess
+from pathlib import Path
 from datetime import datetime
 from time import time, sleep
 from multiprocessing import Pool
@@ -8,6 +9,7 @@ from multiprocessing import Pool
 import psutil
 
 import cpu
+import log
 from cpu import CPU, RAPL
 
 VERSION = '0.3'
@@ -88,6 +90,12 @@ def debug_power_info():
     [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
     print(f'Present temperature sensors: {list(cpu.present_temperature_sensors)}')
 
+def print_log():
+    # If daemon installed
+    if Path('/etc/systemd/system/cpuauto.service').exists():
+        print(cpu.shell('journalctl -u cpuauto.service'))
+    else:
+        log.log_error("cpuauto.service is not installed. Run 'cpuauto --daemon' to install daemon (systemd).")
 
 # CPU power / performance profiling
 
