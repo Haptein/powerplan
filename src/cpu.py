@@ -33,9 +33,8 @@ ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
 # Interface
 PIPE = subprocess.PIPE
 
-def shell(command: str, return_stdout: bool = True, mute_stderr: bool = False) -> str:
-    stderr_pipe = PIPE if mute_stderr else None
-    shell_subprocess = subprocess.run(command, stdout=PIPE, stderr=stderr_pipe, shell=True)
+def shell(command: str, return_stdout: bool = True) -> str:
+    shell_subprocess = subprocess.run(command, stdout=PIPE, shell=True)
     if return_stdout:
         return shell_subprocess.stdout.decode('utf-8')
 
@@ -52,10 +51,10 @@ def read_datafile(path: str, dtype=str):
 # SYSTEM
 
 def read_procs() -> set:
-    return set(shell("grep -h . /proc/*/comm", mute_stderr=True).splitlines())  # 2000 : 17.95s
+    return set(shell("grep -sh . /proc/*/comm").splitlines())  # 2000 : 13.47s
 
 def process_instances(name: str) -> int:
-    return shell("grep -h . /proc/*/comm", mute_stderr=True).splitlines().count(name)
+    return shell("grep -sh . /proc/*/comm").splitlines().count(name)
 
 def power_supply_detection() -> tuple:
     '''Returns tuple of ac_device_path, bat_device_path, power_path'''
