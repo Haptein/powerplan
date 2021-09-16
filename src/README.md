@@ -11,8 +11,7 @@
 ## TODO
 
 ### Core Function
-- CPU profiling (wip)
-- Error Logging
+- System profiling (wip)
 - Temperature control system (researching...)
 
 ### QoL
