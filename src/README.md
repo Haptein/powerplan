@@ -11,8 +11,7 @@
 ## TODO
 
 ### Core Function
-- implement daemon (systemd)
-- CPU profiling (researching...)
+- CPU profiling (wip)
 - Error Logging
 - Temperature control system (researching...)
 

@@ -1,4 +1,13 @@
 #!/usr/bin/bash
+
+# Systemd daemon
+if [[ -f "/etc/systemd/system/cpuauto.service" ]];then
+    systemctl stop cpuauto
+    systemctl disable cpuauto
+    systemctl daemon-reload
+    rm /etc/systemd/system/cpuauto.service
+fi
+
+# Everything else
 rm /usr/bin/cpuauto
 rm -r /opt/cpuauto
-

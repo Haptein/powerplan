@@ -19,6 +19,7 @@ argparser.add_argument('-p', '--profile', default='', help='activate a given pro
 argparser.add_argument('-r', '--reload', action='store_true', help='hot-reload profiles')
 argparser.add_argument('-b', '--benchmark', action='store_true', help='Stresses CPU and records power/performance metrics to a csv file')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
+argparser.add_argument('--daemon', action='store_true', help='enable cpuauto as a daemon (systemd)')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
 ARGS = argparser.parse_args()
@@ -84,6 +85,10 @@ if __name__ == '__main__':
     if ARGS.uninstall:
         cpu.shell('/opt/cpuauto/uninstall')
         print('SEE YOU SPACE COWBOY...')
+        exit(0)
+
+    if ARGS.daemon:
+        cpu.shell('/opt/cpuauto/enable-daemon')
         exit(0)
 
     # Activate profile and exit

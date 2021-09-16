@@ -10,7 +10,7 @@ import psutil
 import cpu
 from cpu import CPU, RAPL
 
-VERSION = '0.2'
+VERSION = '0.3'
 
 # Information display
 

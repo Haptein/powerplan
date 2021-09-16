@@ -2,9 +2,13 @@
 mkdir /opt/cpuauto/
 mkdir /opt/cpuauto/src/
 cp -r src/*.py /opt/cpuauto/src/
-cp -r uninstall /opt/cpuauto/uninstall
+cp uninstall /opt/cpuauto/
+cp enable-daemon /opt/cpuauto/
+cp cpuauto.service /opt/cpuauto/
 cp LICENSE /opt/cpuauto/LICENSE
 ln -s /opt/cpuauto/src/cpuauto.py /usr/bin/cpuauto
 chmod 755 /opt/cpuauto/src/cpuauto.py
 chmod 755 /opt/cpuauto/uninstall
 chmod 755 /usr/bin/cpuauto
+chmod 744 /opt/cpuauto/enable-daemon
+chmod 744 /opt/cpuauto/cpuauto.service

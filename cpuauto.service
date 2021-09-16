@@ -1,0 +1,12 @@
+[Unit]
+Description=cpuauto service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cpuauto
+User=root
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
