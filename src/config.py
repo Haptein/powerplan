@@ -110,15 +110,13 @@ class CpuProfile:
     def _check_value_in_range(self, value_name, value, allowed_range) -> bool:
         minimum, maximum = allowed_range
         if not (minimum <= value and value <= maximum):  # range is limit inclusive
-            error_msg = f'Error found in profile "{self.name}": value of {value_name} is outside allowed range.' + \
-                f'\nAllowed range for this value is: {allowed_range}.'
-            log_error(error_msg)
+            log_error(f'Invalid profile "{self.name}": {value_name} is outside allowed range. '
+                      f'Allowed range for this value is: {allowed_range}.')
 
     def _check_value_order(self, range_name, minimum, maximum):
         if minimum > maximum:
-            error_msg = f'Error found in profile "{self.name}": value of {range_name} is invalid.' + \
-                '\nMaximum must be greater than or equal to minimum.'
-            log_error(error_msg)
+            log_error(f'Invalid profile "{self.name}": range {range_name} is invalid. '
+                      'Maximum must be greater than or equal to minimum.')
 
     def __post_init__(self):
         # Validates profile values
@@ -127,8 +125,7 @@ class CpuProfile:
         for value_name, value in zip(('ac_pollingperiod', 'bat_pollingperiod'),
                                      (self.ac_pollingperiod, self.bat_pollingperiod)):
             if value <= 0:
-                log_error(f'Error found in profile "{self.name}": value of {value_name} is invalid.'
-                          '\nThis value must be greater than zero.')
+                log_error(f'Invalid profile "{self.name}": {value_name} must be greater than zero.')
 
         # Online Cores
         self._check_value_in_range('', self.ac_cores_online, [1, CPU['physical_cores']])
@@ -158,38 +155,32 @@ class CpuProfile:
 
         # Governor available
         if self.ac_governor not in CPU['governors']:
-            error_msg = (f'ac_governor value "{self.ac_governor}" '
-                         f'in profile "{self.name}" not in available governors.'
-                         f'\nAvailable governors: {CPU["governors"]}')
-            log_error(error_msg)
+            log_error(f'Invalid profile "{self.name}": ac_governor "{self.ac_governor}" not in available governors.'
+                      f'\nAvailable governors: {CPU["governors"]}')
+
         if self.bat_governor not in CPU['governors']:
-            error_msg = (f'bat_governor value "{self.bat_governor}" '
-                         f'in profile "{self.name}" not in available governors.'
-                         f'\nAvailable governors: {CPU["governors"]}')
-            log_error(error_msg)
+            log_error(f'Invalid profile "{self.name}": bat_governor "{self.bat_governor}" not in available governors.'
+                      f'\nAvailable governors: {CPU["governors"]}')
 
         # Policy available
         if self.ac_policy not in CPU['policies']:
-            error_msg = (f'ac_policy value "{self.ac_policy}" '
-                         f'in profile "{self.name}" not in available policies.'
-                         f'\nAvailable policies: {CPU["policies"]}')
-            log_error(error_msg)
+            log_error(f'Invalid profile "{self.name}": ac_policy "{self.ac_policy}" not in available policies.'
+                      f'\nAvailable policies: {CPU["policies"]}')
+
         if self.bat_policy not in CPU['policies']:
-            error_msg = (f'bat_policy value "{self.bat_policy}" '
-                         f'in profile "{self.name}" not in available policies.'
-                         f'\nAvailable policies: {CPU["policies"]}')
-            log_error(error_msg)
+            log_error(f'Invalid profile "{self.name}": bat_policy "{self.bat_policy}" not in available policies. '
+                      f'\nAvailable policies: {CPU["policies"]}')
 
         # Governor - Policy compatibility:
         if self.ac_governor == 'performance':
             if self.ac_policy != 'performance':
-                log_error(f'ac_governor value {self.ac_governor} is incompatible with ac_policy {self.ac_policy} '
-                          f'in profile "{self.name}".')
+                log_error(f'Invalid profile "{self.name}": '
+                          f'ac_governor {self.ac_governor} is incompatible with ac_policy {self.ac_policy}.')
 
         if self.bat_governor == 'performance':
             if self.bat_policy != 'performance':
-                log_error(f'bat_governor value {self.bat_governor} is incompatible with bat_policy {self.bat_policy} '
-                          f'in profile "{self.name}".')
+                log_error(f'Invalid profile "{self.name}": '
+                          f'bat_governor {self.bat_governor} is incompatible with bat_policy {self.bat_policy}.')
 
 
 # Config IO
@@ -206,13 +197,13 @@ def check_config_keys(config):
         needed_default_keys = DEFAULT_CONFIG['DEFAULT'].keys()
         for needed_key in needed_default_keys:
             if needed_key not in provided_default_keys:
-                log_error(f'DEFAULT profile is missing the following key:{needed_key}')
+                log_error(f'DEFAULT profile is missing the following key: {needed_key}.')
 
     # Check keys in all profiles against DEFAULT_CONFIG['DEFAULT']
     for profile_name in config:
         for key in config[profile_name]:
             if key not in DEFAULT_CONFIG['DEFAULT'].keys():
-                log_error(f'invalid key "{key}" in profile {profile_name}.')
+                log_error(f'Invalid profile "{profile_name}": invalid key "{key}".')
 
 
 def read_config():

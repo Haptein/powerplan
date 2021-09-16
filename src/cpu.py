@@ -7,7 +7,7 @@ from os import getuid
 from time import time
 from pathlib import Path
 
-from log import log_warning
+import log
 
 
 '''
@@ -416,7 +416,7 @@ elif turbo_amd_legacy.exists():
     CPU['turbo_inverse'] = False
 else:
     CPU['turbo_path'] = None
-    log_warning('Turbo boost is not available.')
+    log.log_info('Turbo boost is not available.')
 
 if CPU['turbo_path'] is not None:
     # Test if writing to CPU['turbo_path'] is possible
@@ -424,7 +424,8 @@ if CPU['turbo_path'] is not None:
         turbo_file_contents = CPU['turbo_path'].read_text()
         CPU['turbo_path'].write_text(turbo_file_contents)
     except PermissionError:
-        log_warning('Turbo (boost/core) is disabled on BIOS or not available.')
+        if is_root():
+            log.log_info('Turbo (boost/core) is disabled on BIOS or not available.')
         CPU['turbo_allowed'] = False
     else:
         CPU['turbo_allowed'] = True
@@ -455,7 +456,7 @@ RAPL = Rapl()
 
 # Checks
 if CPU['power_reading_method'] is None:
-    log_warning('No power reading method available.')
+    log.log_info('No power reading method available.')
 
 present_temperature_sensors = psutil.sensors_temperatures().keys()
 if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):
@@ -463,4 +464,4 @@ if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):
            f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
            f"\n\tDetected sensors were: {present_temperature_sensors}"
            "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
-    log_warning(msg)
+    log.log_warning(msg)

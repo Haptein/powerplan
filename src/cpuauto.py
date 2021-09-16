@@ -34,7 +34,7 @@ def single_activation(profile):
     profiles = read_profiles()
     if profile in profiles:
         profiles[ARGS.profile].apply()
-        print(profiles[ARGS.profile])
+        print(f'Profile {profile} active.')
     else:
         log.log_error(f'Profile "{ARGS.profile}" not found in config file.')
 
@@ -101,8 +101,8 @@ if __name__ == '__main__':
             # Profile will be overriden
             log.log_warning('Single profile activation will get overwritten by the already running instance.')
         else:
-            log.log_error('An instance of cpuauto is already running.\n'
-                          'You can still monitor system status with: cpuauto --status')
+            log.log_error('An instance of cpuauto is already running. '
+                          'You can still monitor system status with: cpuauto --status.')
     else:
         monitor_mode = False
 
