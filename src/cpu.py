@@ -1,14 +1,12 @@
 #!/usr/bin/python3
 
 import psutil
-import subprocess
 from glob import glob
-from os import getuid
 from time import time
 from pathlib import Path
 
 import log
-
+from shell import shell, is_root, read_datafile
 
 '''
 File structure:
@@ -30,31 +28,7 @@ CPUFREQ_DIR = CPU_DIR + 'cpu0/cpufreq/'
 # the order in this list embodies priority
 ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
 
-# Interface
-PIPE = subprocess.PIPE
-
-def shell(command: str, return_stdout: bool = True) -> str:
-    shell_subprocess = subprocess.run(command, stdout=PIPE, shell=True)
-    if return_stdout:
-        return shell_subprocess.stdout.decode('utf-8')
-
-def is_root():
-    return getuid() == 0
-
-def read_datafile(path, dtype=str):
-    '''Reads first line of path (str or Path), strips and converts to dtype.'''
-    with open(path, "r") as file:
-        data = file.readline().strip()
-    return dtype(data)
-
-
-# SYSTEM
-
-def read_procs() -> set:
-    return set(shell("grep -sh . /proc/*/comm").splitlines())  # 2000 : 13.47s
-
-def process_instances(name: str) -> int:
-    return shell("grep -sh . /proc/*/comm").splitlines().count(name)
+# POWER
 
 def power_supply_detection() -> tuple:
     '''Returns tuple of ac_device_path, bat_device_path, power_path'''
@@ -212,7 +186,7 @@ class IntelRapl:
         else:
             return -1
 
-# CPU
+# CPU STATUS
 
 def cpu_ranges_to_list(cpu_ranges: str) -> list:
     '''Parses virtual cpu's (offline,online,present) files formatting '''

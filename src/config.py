@@ -6,6 +6,7 @@ from time import time, sleep
 from dataclasses import dataclass
 from collections import OrderedDict
 
+import shell
 import cpu
 from cpu import CPU
 from log import log_error
@@ -252,7 +253,7 @@ def read_profiles():
 def get_triggered_profile(profiles: OrderedDict):
     '''Returns triggered CpuProfile object according to running processes'''
     # Check running processes
-    procs = cpu.read_procs()
+    procs = shell.read_procs()
 
     # check profile trigger apps against procs
     for cpuprofile in profiles.values():

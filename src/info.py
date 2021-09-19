@@ -8,6 +8,8 @@ from multiprocessing import Pool
 
 import psutil
 
+import log
+import shell
 import cpu
 import log
 from cpu import CPU
@@ -95,7 +97,7 @@ def debug_power_info():
 def print_log():
     # If daemon installed
     if Path('/etc/systemd/system/cpuauto.service').exists():
-        print(cpu.shell('journalctl -u cpuauto.service'))
+        print(shell.shell('journalctl -u cpuauto.service'))
     else:
         log.log_error("cpuauto.service is not installed. Run 'cpuauto --daemon' to install daemon (systemd).")
 
@@ -128,7 +130,7 @@ class Status:
         self.package_power.append(self.intelrapl.read_power())
         self.core_power.append(self.intelrapl.read_power('core'))
         self.battery_power.append(cpu.read_power_draw())
-        self.freq_lim.append(cpu.read_datafile(cpu.CPUFREQ_DIR + 'scaling_max_freq', dtype=int)/1000)
+        self.freq_lim.append(shell.read_datafile(cpu.CPUFREQ_DIR + 'scaling_max_freq', dtype=int)/1000)
         self.max_freq.append(max(freq_list))
         self.running_threads.append(running_threads)
 

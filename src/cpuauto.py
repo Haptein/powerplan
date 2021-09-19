@@ -8,9 +8,9 @@ from psutil import Process
 import log
 import cpu
 import info
+import shell
 from config import read_profiles, get_triggered_profile
 
-NAME = 'cpuauto'
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-l', '--list', action='store_true', help='list profiles and exit')
@@ -88,19 +88,17 @@ if __name__ == '__main__':
         log.log_error('Must be run with root provileges.')
 
     if ARGS.uninstall:
-        cpu.shell('/opt/cpuauto/uninstall')
-        print('SEE YOU SPACE COWBOY...')
+        shell.uninstall()
         exit(0)
 
     if ARGS.daemon:
-        cpu.shell('/opt/cpuauto/enable-daemon')
+        shell.enable_daemon()
         exit(0)
 
     # Check if cpuauto is already running
-    if cpu.process_instances(NAME) > 1:
+    if shell.process_already_running():
         # Monitor mode
         if ARGS.status:
-            print('An instance of cpuauto is already running. This one will just report system status.')
             monitor_mode = True
         elif ARGS.profile:
             # Profile will be overriden
