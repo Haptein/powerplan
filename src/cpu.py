@@ -191,7 +191,7 @@ class IntelRapl:
     def __init__(self):
         '''If exists and enabled, create RaplLayer objs for each layer found.'''
         enabled_path = Path('/sys/class/powercap/intel-rapl/enabled')
-        if enabled_path.exists():
+        if enabled_path.exists() and is_root():
             self.enabled = read_datafile(enabled_path, bool)
         else:
             self.enabled = False
