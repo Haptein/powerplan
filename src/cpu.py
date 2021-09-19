@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import psutil
-from glob import glob
 from time import time
 from pathlib import Path
 
@@ -20,107 +19,12 @@ RAPL
 '''
 
 # PATHS
-POWER_DIR = '/sys/class/power_supply/'
 SYSTEM_DIR = '/sys/devices/system/'
 CPU_DIR = SYSTEM_DIR + 'cpu/'
 CPUFREQ_DIR = CPU_DIR + 'cpu0/cpufreq/'
 
 # the order in this list embodies priority
 ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
-
-# POWER
-
-def power_supply_detection() -> tuple:
-    '''Returns tuple of ac_device_path, bat_device_path, power_path'''
-
-    # /type values: "Battery", "UPS", "Mains", "USB", "Wireless"
-    ac_devices = glob(f'{POWER_DIR}A*/type')
-    for ac in ac_devices:
-        if read_datafile(ac) == 'Mains':
-            ac_device_path = Path(ac).with_name('online')
-            if ac_device_path.exists():
-                break
-    else:
-        ac_device_path = None
-
-    bat_devices = glob(f'{POWER_DIR}BAT*/type')
-    for bat in bat_devices:
-        if read_datafile(bat) == 'Battery':
-            bat_device_path = Path(bat).with_name('status')
-            if bat_device_path.exists():
-                break
-    else:
-        bat_device_path = None
-
-    return ac_device_path, bat_device_path
-
-def power_reading_method(bat_device_path=None):
-    '''
-    Tests possible power reading paths
-    returns ['power', 'current_and_voltage', None]
-    '''
-    if bat_device_path is None:
-        return None
-    power_now_path = bat_device_path.with_name('power_now')
-    current_now_path = bat_device_path.with_name('current_now')
-    voltage_now_path = bat_device_path.with_name('voltage_now')
-    if power_now_path.exists():
-        return 'power'
-    elif current_now_path.exists() and voltage_now_path.exists():
-        return 'current_and_voltage'
-    else:
-        return None
-
-def read_charging_state() -> bool:
-    ''' Is battery charging? Deals with unavailable bat OR ac-adapter info.'''
-
-    if CPU['ac_path'] is not None:
-        # AC adapter states: 0, 1, unknown
-        ac_data = CPU['ac_path'].read_text()
-        if '1' in ac_data:
-            # at least one online ac adapter
-            return True
-        elif '0' in ac_data:
-            # at least one offline ac adapter
-            ac_state = False
-        else:
-            # Unknown ac state
-            ac_state = None
-    else:
-        ac_state = None
-
-    if CPU['bat_path'] is not None:
-        # Possible values: "Unknown", "Charging", "Discharging", "Not charging", "Full"
-        battery_data = CPU['bat_path'].read_text()
-        if "Discharging" in battery_data:
-            battery_state = False
-        elif "Charging" in battery_data:
-            return True
-        else:
-            battery_state = None
-    else:
-        battery_state = None
-
-    # At this point both ac and bat state can only be False or None
-    if False in [ac_state, battery_state]:
-        return False
-    else:
-        # both ac-adapter and battery states are unknown charging == True
-        # Desktop computers should fall in this case
-        return True
-
-
-def read_power_draw() -> bool:
-    '''Returns power draw in Watt units according to detected method'''
-    if CPU['power_reading_method'] == 'power':
-        power_data = CPU['bat_path'].with_name('power_now').read_text()
-        return float(power_data) / 10**6
-    elif CPU['power_reading_method'] == 'current_and_voltage':
-        current_data = CPU['bat_path'].with_name('current_now').read_text()
-        voltage_data = CPU['bat_path'].with_name('voltage_now').read_text()
-        return float(current_data) * float(voltage_data) / 10**12
-    else:
-        return -1
 
 # Rapl
 class RaplLayer:
@@ -445,16 +349,6 @@ for core_id in list_cores():
         siblings_set.add(siblings)
 CPU['thread_siblings'] = sorted(siblings_set)
 CPU['physical_cores'] = len(siblings_set)
-
-# Power supply detection and power reading mode
-ac_path, bat_path = power_supply_detection()
-CPU['ac_path'] = ac_path
-CPU['bat_path'] = bat_path
-CPU['power_reading_method'] = power_reading_method(bat_path)
-
-# Checks
-if CPU['power_reading_method'] is None:
-    log.log_info('No power reading method available.')
 
 present_temperature_sensors = psutil.sensors_temperatures().keys()
 if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):

@@ -11,7 +11,7 @@ import psutil
 import log
 import shell
 import cpu
-import log
+import powersupply
 from cpu import CPU
 
 VERSION = '0.3'
@@ -34,20 +34,20 @@ SYSTEM_INFO = f'''
 
     Paths
     Turbo:\t\t{CPU['turbo_path']}
-    AC adapter:\t\t{CPU['ac_path'].parent}
-    Battery:\t\t{CPU['bat_path'].parent}
-    Power method:\t{CPU['power_reading_method']}
+    AC adapter:\t\t{powersupply.AC.parent}
+    Battery:\t\t{powersupply.BAT.parent}
+    Power method:\t{powersupply.POWER_READING_METHOD}
 '''
 
 
 def show_system_status(profile, monitor_mode=False):
     '''Prints System status during runtime'''
 
-    charging = cpu.read_charging_state()
+    charging = powersupply.charging()
     time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
     active_profile = f'{time_now}\t\tActive: {profile.name}'
     power_plan = f'Power plan: {cpu.read_governor()}/{cpu.read_policy()}'
-    power_status = f'Charging: {charging}\t\tBattery draw: {cpu.read_power_draw():.1f}W'
+    power_status = f'Charging: {charging}\t\tBattery draw: {powersupply.power_draw():.1f}W'
     if RAPL.enabled:
         power_status += f'\tPackage: {RAPL.read_power():.2f}W'
 
@@ -90,8 +90,8 @@ def show_system_status(profile, monitor_mode=False):
 
 def debug_power_info():
     # POWER SUPPLY TREE
-    power_supply_info = cpu.shell('grep . /sys/class/power_supply/*/* -d skip')
-    [print('/'.join(info.split('/')[4:])) for info in power_supply_info.splitlines()]
+    power_supply_tree = powersupply.tree()
+    [print('/'.join(info.split('/')[4:])) for info in power_supply_tree.splitlines()]
     print(f'Present temperature sensors: {list(cpu.present_temperature_sensors)}')
 
 def print_log():
@@ -106,7 +106,7 @@ def print_log():
 class Status:
     def __init__(self, name_suffix=''):
         self.cores_online = len(cpu.list_cores('online'))
-        self.charging_state = cpu.read_charging_state()
+        self.charging_state = powersupply.charging()
         self.time = []
         self.avg_util = []
         self.avg_freq = []
@@ -129,7 +129,7 @@ class Status:
         self.package_temp.append(cpu.read_temperature())
         self.package_power.append(self.intelrapl.read_power())
         self.core_power.append(self.intelrapl.read_power('core'))
-        self.battery_power.append(cpu.read_power_draw())
+        self.battery_power.append(powersupply.power_draw())
         self.freq_lim.append(shell.read_datafile(cpu.CPUFREQ_DIR + 'scaling_max_freq', dtype=int)/1000)
         self.max_freq.append(max(freq_list))
         self.running_threads.append(running_threads)

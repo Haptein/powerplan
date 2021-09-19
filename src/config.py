@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from collections import OrderedDict
 
 import shell
+import powersupply
 import cpu
 from cpu import CPU
 from log import log_error
@@ -74,8 +75,7 @@ class CpuProfile:
 
     def apply(self) -> float:
         ''' Applies profile configuration and returns sleep time needed (after compensation)'''
-        charging = cpu.read_charging_state()
-        if charging:
+        if powersupply.charging():
             cpu.set_physical_cores_online(self.ac_cores_online)
             cpu.set_freq_range(self.ac_minfreq, self.ac_maxfreq)
             cpu.set_perf_range(self.ac_minperf, self.ac_maxperf)
@@ -100,7 +100,7 @@ class CpuProfile:
 
     def sleep(self, iteration_start, charging_state=None):
         if charging_state is None:
-            charging_state = cpu.read_charging_state()
+            charging_state = powersupply.charging()
         if charging_state:
             pollingperiod = self.ac_pollingperiod / 1000
         else:
