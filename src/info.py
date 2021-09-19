@@ -10,11 +10,13 @@ import psutil
 
 import cpu
 import log
-from cpu import CPU, RAPL
+from cpu import CPU
 
 VERSION = '0.3'
 
 # Information display
+
+RAPL = cpu.IntelRapl()
 
 SYSTEM_INFO = f'''
     System
@@ -108,11 +110,12 @@ class Status:
         self.avg_freq = []
         self.package_temp = []
         self.package_power = []
+        self.core_power = []
         self.battery_power = []
         self.freq_lim = []
         self.max_freq = []
         self.running_threads = []
-        self.rapl = cpu.Rapl()
+        self.intelrapl = cpu.IntelRapl()
         gov, pol = cpu.read_governor(), cpu.read_policy()
         self.name_suffix = name_suffix + gov + pol
 
@@ -122,30 +125,34 @@ class Status:
         self.avg_util.append(cpu.read_cpu_utilization('avg'))
         self.avg_freq.append(int(sum(freq_list)/self.cores_online))
         self.package_temp.append(cpu.read_temperature())
-        self.package_power.append(self.rapl.read_power())
+        self.package_power.append(self.intelrapl.read_power())
+        self.core_power.append(self.intelrapl.read_power('core'))
         self.battery_power.append(cpu.read_power_draw())
         self.freq_lim.append(cpu.read_datafile(cpu.CPUFREQ_DIR + 'scaling_max_freq', dtype=int)/1000)
         self.max_freq.append(max(freq_list))
         self.running_threads.append(running_threads)
 
     def display(self):
-        print(f'{self.avg_util[-1]:3.1f}%\tAvg:{self.avg_freq[-1]}MHz\tPkg:{self.package_power[-1]:2.2f}W  {self.package_temp[-1]:3.2f}°C    ')
+        print(f'{self.avg_util[-1]:3.1f}%\tAvg:{self.avg_freq[-1]}MHz\t'
+              f'Pkg:{self.package_power[-1]:2.2f}W  {self.package_temp[-1]:3.2f}°C')
 
     def save(self):
         file_name = f'cores:{self.cores_online}_charging:{self.charging_state}{self.name_suffix}.csv'
         self.time = [t-self.time[0] for t in self.time]
         with open(file_name, 'w', newline='') as file:
             writer = csv.writer(file, delimiter=',')
-            writer.writerow(['time', 'running_threads', 'freq_lim', 'max_freq', 'avg_freq',
-                             'avg_util', 'package_power', 'battery_power', 'package_temp'])
-            writer.writerows(list(zip(self.time, self.running_threads, self.freq_lim, self.max_freq, self.avg_freq,
-                                      self.avg_util, self.package_power, self.battery_power, self.package_temp)))
+            header = ['time', 'running_threads', 'freq_lim', 'max_freq', 'avg_freq', 'avg_util',
+                      'package_power', 'core_power', 'battery_power', 'package_temp']
+            data = list(zip(self.time, self.running_threads, self.freq_lim, self.max_freq, self.avg_freq, self.avg_util,
+                            self.package_power, self.core_power, self.battery_power, self.package_temp))
+            writer.writerow(header)
+            writer.writerows(data)
 
 def fudgel(n):
     while True:
         _ = eval("""'Help me! I can\\'t stop D='""")
 
-def profile_system(threads: list = [1, 2, 4, 6], T=0.2, step_time=10, step_freq=100_000, resting_temp=46):
+def profile_system(threads: list = [1], T=0.2, step_time=10, step_freq=100_000, resting_temp=46):
     # Setup
     minfreq = cpu.CPU['minfreq']
     maxfreq = cpu.CPU['maxfreq']

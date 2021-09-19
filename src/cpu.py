@@ -41,8 +41,8 @@ def shell(command: str, return_stdout: bool = True) -> str:
 def is_root():
     return getuid() == 0
 
-def read_datafile(path: str, dtype=str):
-    '''Reads first line of a file, strips and converts to dtype.'''
+def read_datafile(path, dtype=str):
+    '''Reads first line of path (str or Path), strips and converts to dtype.'''
     with open(path, "r") as file:
         data = file.readline().strip()
     return dtype(data)
@@ -149,33 +149,35 @@ def read_power_draw() -> bool:
         return -1
 
 # Rapl
+class RaplLayer:
+    def __init__(self, layer_path: Path):
+        # Assumes name, enabled, energy_uj and max_energy_range_uj exist
+        self.name = read_datafile(layer_path/'name')
+        self.enabled = read_datafile(layer_path/'enabled', int)
+        self.max_energy_range_uj = read_datafile(layer_path/'max_energy_range_uj', int)
+        self.energy_uj_path = layer_path/'energy_uj'
+        # Initialize reading
+        self.last_time, self.last_energy = self.read_time_energy()
 
-class Rapl:
-    def __init__(self):
-        self.package_energy_now = Path('/sys/class/powercap/intel-rapl:0/energy_uj')
-        package_enabled = self.package_energy_now.with_name('enabled')
-        needed_paths_exist = self.package_energy_now.exists() and package_enabled.exists()
-        if needed_paths_exist and is_root() and '1' in package_enabled.read_text():
-            self.enabled = True
-            self.max_energy = int(package_enabled.with_name('max_energy_range_uj').read_text())
-            self.last_energy = int(self.package_energy_now.read_text())
-            self.last_time = time()
-        else:
-            self.enabled = False
+    def read_time_energy(self):
+        return time(), read_datafile(self.energy_uj_path, int)
 
     def read_power(self):
-        if not self.enabled:
-            return -1
-
         # Read
-        current_energy = int(self.package_energy_now.read_text())
-        current_time = time()
+        current_time, current_energy = self.read_time_energy()
+
         # Compute
         energy_delta = current_energy - self.last_energy
         time_delta = current_time - self.last_time
+
+        # Max energy range correction
         if current_energy < self.last_energy:
             # Energy counter overflowed
             energy_delta += self.max_energy
+            log.log_info(f'energy range overflow detected for intel-rapl layer:{self.name}.'
+                         f'time delta:{time_delta}, e_i:{current_energy}, e_i-1:{self.last_energy}'
+                         f'energy delta:{energy_delta}')
+
         current_power = energy_delta / time_delta / 10**6  # in Watt
 
         # Update
@@ -183,6 +185,34 @@ class Rapl:
         self.last_time = current_time
 
         return current_power
+
+
+class IntelRapl:
+    def __init__(self):
+        '''If exists and enabled, create RaplLayer objs for each layer found.'''
+        enabled_path = Path('/sys/class/powercap/intel-rapl/enabled')
+        if enabled_path.exists():
+            self.enabled = read_datafile(enabled_path, bool)
+        else:
+            self.enabled = False
+
+        if not self.enabled:
+            return
+
+        # If reached this point rapl exists and is enabled
+        self.layers = dict()
+        layer_paths = Path('/sys/class/powercap/').glob('intel-rapl:*')
+        for layer_path in layer_paths:
+            layer = RaplLayer(layer_path)
+            self.layers[layer.name] = layer
+
+        print(self.layers)
+
+    def read_power(self, name: str = 'package-0'):
+        if self.enabled:
+            return self.layers[name].read_power()
+        else:
+            return -1
 
 # CPU
 
@@ -449,10 +479,6 @@ ac_path, bat_path = power_supply_detection()
 CPU['ac_path'] = ac_path
 CPU['bat_path'] = bat_path
 CPU['power_reading_method'] = power_reading_method(bat_path)
-
-
-# Initialize Rapl object
-RAPL = Rapl()
 
 # Checks
 if CPU['power_reading_method'] is None:
