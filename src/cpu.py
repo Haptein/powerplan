@@ -206,8 +206,6 @@ class IntelRapl:
             layer = RaplLayer(layer_path)
             self.layers[layer.name] = layer
 
-        print(self.layers)
-
     def read_power(self, name: str = 'package-0'):
         if self.enabled:
             return self.layers[name].read_power()
