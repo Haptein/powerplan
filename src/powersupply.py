@@ -1,6 +1,7 @@
 from glob import glob
 from pathlib import Path
 
+import log
 from shell import read_datafile, shell
 
 POWER_DIR = '/sys/class/power_supply/'
@@ -118,10 +119,11 @@ def tree() -> str:
 AC, BAT = power_supply_detection()
 POWER_READING_METHOD = power_reading_method(BAT)
 
-if __name__ == '__main__':
-    print(AC, BAT, POWER_READING_METHOD)
-    print(tree())
+# Log
+if AC:
+    log.log_info(f'AC-adapter detected: {AC.parent.name}')
+if BAT:
+    log.log_info(f'Battery detected: {BAT.parent.name}, power_reading_method: {POWER_READING_METHOD}')
 
-# Checks#############
-#if POWER_READING_METHOD is None:
-#    log.log_info('No power reading method available.')
+if __name__ == '__main__':
+    print(tree())
