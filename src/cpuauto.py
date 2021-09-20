@@ -40,8 +40,10 @@ def single_activation(profile):
         log.log_error(f'Profile "{ARGS.profile}" not found in config file.')
 
 def main_loop(monitor_mode):
-    process = Process()
     profiles = read_profiles()
+
+    if ARGS.debug:
+        process = Process()
 
     while True:
         iteration_start = time()
@@ -124,7 +126,7 @@ if __name__ == '__main__':
     # benchmark
     if ARGS.benchmark:
         # Note: still need to add arguments to cli
-        info.profile_system()
+        info.profile_system([1, 1, 1])
         exit(0)
 
     try:
