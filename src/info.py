@@ -201,5 +201,41 @@ def profile_system(threads: list = [1], T=0.2, step_time=10, step_freq=100_000, 
     status.save()
 
 
+# Bench
+def fudgel_n_times(n):
+    for i in range(n):
+        _ = eval("Help me! I can't stop D=")
+
+def bench_freq_lim(freq_lim: int, n_iter: int = 1000):
+    # Start vars
+    cpu.set_freq_range(min_freq=CPU.minfreq, max_freq=freq_lim*1000)  # in MHz
+    time_start = time()
+    charge_start = powersupply.charge_left()
+    # Work
+    fudgel_n_times(n_iter)
+    # End vars
+    time_end = time()
+    charge_end = powersupply.charge_left()
+    time_delta = time_end - time_start
+    charge_delta = charge_end - charge_start
+    result = str(f'freq_lim:{freq_lim:5}\tTime elapsed: {time_delta:.3f}s, Charge consumed: {charge_delta}mAH')
+    print(result)
+    return result
+
+def bench_freqs(freqs: list, n_iter: int, output='output.txt'):
+    output_path = Path(output)
+    power_plan = f'Settings: {cpu.read_governor()} {cpu.read_policy()}\n'
+    output_path.write_text(power_plan)
+    for freq in freqs:
+        results = bench_freq_lim(freq, n_iter)
+        with output_path.open('a') as file:
+            file.write(results + '\n')
+        sleep(1)
+
+
 if __name__ == '__main__':
-    profile_system(threads=[1, 3, 6, 12])
+    debug_power_info()
+    exit()
+    # profile_system(threads=[1, 3, 6, 12])
+    freqs = range(int(CPU.minfreq/1000), int(CPU.maxfreq/1000), 200)
+    bench_freqs(freqs, 20_000_000)
