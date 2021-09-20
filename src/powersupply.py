@@ -87,29 +87,22 @@ def power_reading_method(bat_device_path=None):
     '''
     if bat_device_path is None:
         return None
-    power_now_path = bat_device_path.with_name('power_now')
-    current_now_path = bat_device_path.with_name('current_now')
-    voltage_now_path = bat_device_path.with_name('voltage_now')
-    if power_now_path.exists():
+
+    if POWER_NOW.exists():
         return 'power'
-    elif current_now_path.exists() and voltage_now_path.exists():
+    elif CURRENT_NOW.exists() and VOLTAGE_NOW.exists():
         return 'current_and_voltage'
     else:
         return None
 
-
 def power_draw():
     '''Returns battery power draw in Watt units'''
     if POWER_READING_METHOD == 'power':
-        power_data = BAT.with_name('power_now').read_text()
-        return float(power_data) / 10**6
+        return read(POWER_NOW, int) / 10**6
     elif POWER_READING_METHOD == 'current_and_voltage':
-        current_data = BAT.with_name('current_now').read_text()
-        voltage_data = BAT.with_name('voltage_now').read_text()
-        return float(current_data) * float(voltage_data) / 10**12
+        return read(CURRENT_NOW, int) * read(VOLTAGE_NOW, int) / 10**12
     else:
         return -1
-
 
 def tree() -> str:
     return shell('grep . /sys/class/power_supply/*/* -d skip')
@@ -117,6 +110,9 @@ def tree() -> str:
 
 #  Globals
 AC, BAT = power_supply_detection()
+CURRENT_NOW = BAT.with_name('current_now')
+VOLTAGE_NOW = BAT.with_name('voltage_now')
+POWER_NOW = BAT.with_name('power_now')
 POWER_READING_METHOD = power_reading_method(BAT)
 
 # Log
