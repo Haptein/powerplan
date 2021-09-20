@@ -18,14 +18,14 @@ DEFAULT_CONFIG = dict(DEFAULT=dict(
     priority=99,
     ac_pollingperiod=1000,
     bat_pollingperiod=2000,
-    ac_cores_online=CPU['physical_cores'],
-    bat_cores_online=CPU['physical_cores'],
-    ac_templimit=CPU['crit_temp'] - 5,
-    bat_templimit=CPU['crit_temp'] - 5,
-    ac_minfreq=CPU['minfreq'],
-    ac_maxfreq=CPU['maxfreq'],
-    bat_minfreq=CPU['minfreq'],
-    bat_maxfreq=int(CPU['minfreq']*0.75 + CPU['maxfreq']*0.25),
+    ac_cores_online=CPU.physical_cores,
+    bat_cores_online=CPU.physical_cores,
+    ac_templimit=CPU.crit_temp - 5,
+    bat_templimit=CPU.crit_temp - 5,
+    ac_minfreq=CPU.minfreq,
+    ac_maxfreq=CPU.maxfreq,
+    bat_minfreq=CPU.minfreq,
+    bat_maxfreq=int(CPU.minfreq*0.75 + CPU.maxfreq*0.25),
     ac_minperf=1,
     ac_maxperf=100,
     bat_minperf=1,
@@ -129,11 +129,11 @@ class CpuProfile:
                 log_error(f'Invalid profile "{self.name}": {value_name} must be greater than zero.')
 
         # Online Cores
-        self._check_value_in_range('', self.ac_cores_online, [1, CPU['physical_cores']])
-        self._check_value_in_range('', self.bat_cores_online, [1, CPU['physical_cores']])
+        self._check_value_in_range('', self.ac_cores_online, [1, CPU.physical_cores])
+        self._check_value_in_range('', self.bat_cores_online, [1, CPU.physical_cores])
 
         # Freq ranges
-        allowed_freq_range = [CPU['minfreq'], CPU['maxfreq']]
+        allowed_freq_range = [CPU.minfreq, CPU.maxfreq]
         self._check_value_order('ac_minfreq/ac_maxfreq', self.ac_minfreq, self.ac_maxfreq)
         self._check_value_in_range('ac_minfreq', self.ac_minfreq, allowed_freq_range)
         self._check_value_in_range('ac_maxfreq', self.ac_maxfreq, allowed_freq_range)
@@ -155,22 +155,22 @@ class CpuProfile:
         self._check_value_order('bat_tdp_sustain/bat_tdp_burst', self.bat_tdp_sutained, self.bat_tdp_burst)
 
         # Governor available
-        if self.ac_governor not in CPU['governors']:
+        if self.ac_governor not in CPU.governors:
             log_error(f'Invalid profile "{self.name}": ac_governor "{self.ac_governor}" not in available governors.'
-                      f'\nAvailable governors: {CPU["governors"]}')
+                      f'\nAvailable governors: {CPU.governors}')
 
-        if self.bat_governor not in CPU['governors']:
+        if self.bat_governor not in CPU.governors:
             log_error(f'Invalid profile "{self.name}": bat_governor "{self.bat_governor}" not in available governors.'
-                      f'\nAvailable governors: {CPU["governors"]}')
+                      f'\nAvailable governors: {CPU.governors}')
 
         # Policy available
-        if self.ac_policy not in CPU['policies']:
+        if self.ac_policy not in CPU.policies:
             log_error(f'Invalid profile "{self.name}": ac_policy "{self.ac_policy}" not in available policies.'
-                      f'\nAvailable policies: {CPU["policies"]}')
+                      f'\nAvailable policies: {CPU.policies}')
 
-        if self.bat_policy not in CPU['policies']:
+        if self.bat_policy not in CPU.policies:
             log_error(f'Invalid profile "{self.name}": bat_policy "{self.bat_policy}" not in available policies. '
-                      f'\nAvailable policies: {CPU["policies"]}')
+                      f'\nAvailable policies: {CPU.policies}')
 
         # Governor - Policy compatibility:
         if self.ac_governor == 'performance':

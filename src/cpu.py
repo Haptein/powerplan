@@ -5,17 +5,15 @@ from time import time
 from pathlib import Path
 
 import log
-from shell import shell, is_root, read_datafile
+from shell import shell, is_root, read_datafile, path_is_writable
 
 '''
 File structure:
 PATHS
-INTERFACE
-SYSTEM
+CPUSpec
+RAPL
 CPU INPUT
 CPU OUTPUT
-CPU
-RAPL
 '''
 
 # PATHS
@@ -25,6 +23,103 @@ CPUFREQ_DIR = CPU_DIR + 'cpu0/cpufreq/'
 
 # the order in this list embodies priority
 ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
+
+
+class CPUSpec:
+    ''' Stores all static static attributes and paths (that vary between models and drivers) '''
+
+    def __init__(self):
+        if list_cores('present') != list_cores('online'):
+            if is_root:
+                set_all_cores_online()
+            else:
+                log.log_warning('')
+        # Model
+        self.name = shell('grep "model name" /proc/cpuinfo').split(':')[-1].strip()
+        # Topology
+        self.thread_siblings = self._thread_siblings()
+        self.physical_cores = len(self.thread_siblings)
+        self.logical_cores = len(list_cores())
+        # Limits
+        self.minfreq = read_datafile(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int)
+        self.maxfreq = read_datafile(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
+        self.governors = read_datafile(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
+        self.policies = read_datafile(CPUFREQ_DIR + 'energy_performance_available_preferences').split(' ')
+        self.temp_sensor_available = self._temp_sensor_available()
+        self.crit_temp = read_crit_temp()
+        self._set_turbo_variables()
+
+        '''
+        Scaling driver
+        Hardware : intel_pstate
+        Kernel (cpufreq) : intel_cpufreq, acpi-cpufreq, speedstep-lib, powernow-k8, pcc-cpufreq, p4-clockmod
+        '''
+
+        driver = read_datafile(CPU_DIR + 'cpufreq/policy0/scaling_driver').lower()
+        if driver == 'intel_pstate':
+            self.driver = driver
+            self.basefreq = read_datafile(CPUFREQ_DIR + 'base_frequency', dtype=int)
+            self.min_perf_pct = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
+            self.max_perf_pct = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
+        else:
+            self.driver = 'cpufreq'
+            self.basefreq = ''
+
+    def _thread_siblings(self):
+        # Physical core / Thread sibling detection#set_cores_online()
+        siblings_set = set()
+        # Read thread_siblings_list for each virtual cpu
+        for core_id in list_cores():
+            thread_siblings_list = Path(f'{CPU_DIR}cpu{core_id}/topology/thread_siblings_list')
+            # File won't exist if cpu is offline
+            if thread_siblings_list.exists():
+                # add sibling pair to a set
+                thread_siblings = thread_siblings_list.read_text().strip().split(',')
+                siblings = tuple(int(ths) for ths in thread_siblings)
+                siblings_set.add(siblings)
+        return sorted(siblings_set)
+
+    def _temp_sensor_available(self):
+        self.temperature_sensors = psutil.sensors_temperatures().keys()
+        if not set(self.temperature_sensors).intersection(ALLOWED_TEMP_SENSORS):
+            msg = ("Couldn't detect a known CPU temperature sensor."
+                   f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
+                   f"\n\tDetected sensors were: {self.temperature_sensors}"
+                   "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
+            log.log_warning(msg)
+            return False
+        else:
+            return True
+
+    def _set_turbo_variables(self):
+        #  turbo_allowed, turbo_file, turbo_inverse
+        #  https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
+        turbo_pstate = Path(CPU_DIR + 'intel_pstate/no_turbo')
+        turbo_cpufreq = Path(CPU_DIR + 'cpufreq/boost')
+        turbo_amd_legacy = Path(SYSTEM_DIR + 'cpu0/cpufreq/cpb')
+
+        if turbo_pstate.exists():
+            turbo_path = turbo_pstate
+            turbo_inverse = True
+        elif turbo_cpufreq.exists():
+            turbo_path = turbo_cpufreq
+            turbo_inverse = False
+        elif turbo_amd_legacy.exists():
+            turbo_path = turbo_amd_legacy
+            turbo_inverse = False
+        else:
+            turbo_path = None
+            turbo_allowed = None
+            log.log_info('Turbo boost is not available.')
+
+        if turbo_path is not None:
+            turbo_allowed = path_is_writable(turbo_path)
+            if not turbo_allowed and is_root():
+                log.log_info('Turbo (boost/core) is disabled on BIOS or not available.')
+
+        self.turbo_path = turbo_path
+        self.turbo_inverse = turbo_inverse
+        self.turbo_allowed = turbo_allowed
 
 # Rapl
 class RaplLayer:
@@ -153,12 +248,13 @@ def read_crit_temp() -> int:
         return 100
 
 
-# CPU CONTROL
+# CPU Freq Scaling
+
 def read_governor(core_id: int = 0) -> str:
     return read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor')
 
 def set_governor(governor):
-    assert governor in CPU['governors']
+    assert governor in CPU.governors
     if read_governor() != governor:
         for core_id in list_cores('online'):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
@@ -167,7 +263,7 @@ def read_policy(core_id: int = 0) -> str:
     return read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
 
 def set_policy(policy):
-    assert policy in CPU['policies']
+    assert policy in CPU.policies
     if policy != read_policy():
         for core_id in list_cores('online'):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
@@ -195,31 +291,30 @@ def set_freq_range(min_freq: int, max_freq: int):
         if max_freq != current_freq_range[1]:
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq').write_text(str(max_freq))
 
-def read_perf_range() -> list:
-    min_perf_pct = int(CPU['min_perf_pct_path'].read_text())
-    max_perf_pct = int(CPU['max_perf_pct_path'].read_text())
-    return [min_perf_pct, max_perf_pct]
+def read_perf_range() -> tuple:
+    if CPU.driver == 'intel_pstate':
+        return read_datafile(CPU.min_perf_pct, int), read_datafile(CPU.max_perf_pct, int)
 
 def set_perf_range(min_perf_pct: int, max_perf_pct: int):
     # This setting only exists for intel_pstate
     assert max_perf_pct >= min_perf_pct
-    if CPU['scaling_driver'] == 'intel_pstate':
+    if CPU.driver == 'intel_pstate':
         current_perf_range = read_perf_range()
         if min_perf_pct != current_perf_range[0]:
-            CPU['min_perf_pct_path'].write_text(str(min_perf_pct))
+            CPU.min_perf_pct.write_text(str(min_perf_pct))
         if max_perf_pct != current_perf_range[1]:
-            CPU['max_perf_pct_path'].write_text(str(max_perf_pct))
+            CPU.max_perf_pct.write_text(str(max_perf_pct))
 
 def read_turbo_state():
     '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
-    if CPU['turbo_path'] is None:
+    if CPU.turbo_path is None:
         return None
     else:
-        return bool(int(CPU['turbo_path'].read_text())) ^ CPU['turbo_inverse']
+        return bool(int(CPU.turbo_path.read_text())) ^ CPU.turbo_inverse
 
 def set_turbo_state(turbo_state: bool):
-    if CPU['turbo_allowed'] and (turbo_state != read_turbo_state()):
-        CPU['turbo_path'].write_text(str(int(turbo_state ^ CPU['turbo_inverse'])))
+    if CPU.turbo_allowed and (turbo_state != read_turbo_state()):
+        CPU.turbo_path.write_text(str(int(turbo_state ^ CPU.turbo_inverse)))
 
 def set_all_cores_online():
     # Needed to initialize CPU properly
@@ -229,8 +324,8 @@ def set_all_cores_online():
             core_id_online_path.write_text('1')
 
 def read_physical_core_status(core_num: int) -> bool:
-    assert 0 <= core_num and core_num <= CPU['physical_cores']-1
-    core_ids = CPU['thread_siblings'][core_num]
+    assert 0 <= core_num and core_num <= CPU.physical_cores - 1
+    core_ids = CPU.thread_siblings[core_num]
     # Can't (and shouldn't) turn off core 0
     if 0 in core_ids:
         return True
@@ -241,9 +336,9 @@ def read_physical_core_status(core_num: int) -> bool:
 
 def set_physical_cores_online(num_cores: int):
     '''Sets the number of online physical cores, turns off the rest'''
-    assert 0 < num_cores and num_cores <= CPU['physical_cores']
+    assert 0 < num_cores and num_cores <= CPU.physical_cores
     # Iterate over physical core_num and virtual core siblings
-    for core_num, core_ids in enumerate(CPU['thread_siblings']):
+    for core_num, core_ids in enumerate(CPU.thread_siblings):
         core_online = read_physical_core_status(core_num)
         # not <= bc core_num starts from zero
         if core_num < num_cores:
@@ -263,97 +358,16 @@ def set_tdp_limits(PL1: int, PL2: int):
     If PL1 or PL2 is zero, this does nothing.
     '''
     assert PL1 <= PL2
-    if CPU['scaling_driver'] == 'intel_pstate' and PL1 and PL2:
+    if CPU.driver == 'intel_pstate' and PL1 and PL2:
         PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
         PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
         if PL1_path.exists() and PL2_path.exists():
             if PL1 > 0:
-                PL1_path.write_text(str(PL1*1000000))
+                PL1_path.write_text(str(PL1*1_000_000))
             if PL2 > 0:
-                PL2_path.write_text(str(PL2*1000000))
+                PL2_path.write_text(str(PL2*1_000_000))
             if PL1 > 0 or PL2 > 0:
                 PL1_path.with_name('enabled').write_text('1')
 
 
-# CPU: dict, stores all cpu_specs / Path_objs (except for individual core ones)
-
-if is_root():
-    # Setting all cores online is needed for accurate physical/logical/sibling info retrival
-    set_all_cores_online()
-
-CPU = dict(
-    name=shell('grep model\ name /proc/cpuinfo').split(':')[-1].strip(),
-    logical_cores=len(list_cores()),
-    crit_temp=read_crit_temp(),
-    minfreq=read_datafile(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int),
-    maxfreq=read_datafile(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int),
-    governors=read_datafile(CPUFREQ_DIR + 'scaling_available_governors').split(' '),
-    policies=read_datafile(CPUFREQ_DIR + 'energy_performance_available_preferences').split(' ')
-)
-
-# scaling driver
-# Hardware : intel_pstate
-# Kernel (cpufreq) : intel_cpufreq, acpi-cpufreq, speedstep-lib, powernow-k8, pcc-cpufreq, p4-clockmod
-scaling_driver_data = read_datafile(CPU_DIR + 'cpufreq/policy0/scaling_driver').lower()
-if scaling_driver_data == 'intel_pstate':
-    CPU['scaling_driver'] = 'intel_pstate'
-    CPU['min_perf_pct_path'] = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
-    CPU['max_perf_pct_path'] = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
-    CPU['basefreq'] = read_datafile(CPUFREQ_DIR + 'base_frequency', dtype=int)
-    CPU['freq_info'] = f"{CPU['minfreq']} - {CPU['basefreq']} - {CPU['maxfreq']} kHz"
-else:
-    CPU['scaling_driver'] = 'cpufreq'
-    CPU['freq_info'] = f"{CPU['minfreq']} - {CPU['maxfreq']} kHz"
-
-# turbo_allowed, turbo_file, turbo_inverse
-# https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
-turbo_pstate = Path(CPU_DIR + 'intel_pstate/no_turbo')
-turbo_cpufreq = Path(CPU_DIR + 'cpufreq/boost')
-turbo_amd_legacy = Path(SYSTEM_DIR + 'cpu0/cpufreq/cpb')
-
-if turbo_pstate.exists():
-    CPU['turbo_path'] = turbo_pstate
-    CPU['turbo_inverse'] = True
-elif turbo_cpufreq.exists():
-    CPU['turbo_path'] = turbo_cpufreq
-    CPU['turbo_inverse'] = False
-elif turbo_amd_legacy.exists():
-    CPU['turbo_path'] = turbo_amd_legacy
-    CPU['turbo_inverse'] = False
-else:
-    CPU['turbo_path'] = None
-    log.log_info('Turbo boost is not available.')
-
-if CPU['turbo_path'] is not None:
-    # Test if writing to CPU['turbo_path'] is possible
-    try:
-        turbo_file_contents = CPU['turbo_path'].read_text()
-        CPU['turbo_path'].write_text(turbo_file_contents)
-    except PermissionError:
-        if is_root():
-            log.log_info('Turbo (boost/core) is disabled on BIOS or not available.')
-        CPU['turbo_allowed'] = False
-    else:
-        CPU['turbo_allowed'] = True
-
-# Physical core / Thread sibling detection#set_cores_online()
-siblings_set = set()
-# Read thread_siblings_list for each virtual cpu
-for core_id in list_cores():
-    thread_siblings_list = Path(f'{CPU_DIR}cpu{core_id}/topology/thread_siblings_list')
-    # File won't exist if cpu is offline
-    if thread_siblings_list.exists():
-        # add sibling pair to a set
-        thread_siblings = thread_siblings_list.read_text().strip().split(',')
-        siblings = tuple(int(ths) for ths in thread_siblings)
-        siblings_set.add(siblings)
-CPU['thread_siblings'] = sorted(siblings_set)
-CPU['physical_cores'] = len(siblings_set)
-
-present_temperature_sensors = psutil.sensors_temperatures().keys()
-if not set(psutil.sensors_temperatures()).intersection(ALLOWED_TEMP_SENSORS):
-    msg = ("Couldn't detect a known CPU temperature sensor."
-           f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
-           f"\n\tDetected sensors were: {present_temperature_sensors}"
-           "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
-    log.log_warning(msg)
+CPU = CPUSpec()

@@ -24,18 +24,16 @@ SYSTEM_INFO = f'''
     System
     OS:\t\t\t{platform.platform()}
     cpuauto:\t\t{VERSION} running on Python{platform.python_version()}
-    CPU model:\t\t{CPU['name']}
-    Core configuraton:\t{CPU['physical_cores']}/{len(cpu.list_cores())}\
-    {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU['thread_siblings']])}
-    Frequency range:\t{CPU['freq_info']}
-    Driver:\t\t{CPU['scaling_driver']}
-    Governors:\t\t{', '.join(CPU['governors'])}
-    Policies:\t\t{', '.join(CPU['policies'])}
-
-    Paths
-    Turbo:\t\t{CPU['turbo_path']}
-    AC adapter:\t\t{powersupply.AC.parent}
-    Battery:\t\t{powersupply.BAT.parent}
+    CPU model:\t\t{CPU.name}
+    Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}\
+    {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU.thread_siblings])}
+    Frequency range:\t{" - ".join([str(freq) for freq in (CPU.minfreq, CPU.basefreq, CPU.maxfreq) if freq])} KHz
+    Driver:\t\t{CPU.driver}
+    Turbo:\t\t{CPU.turbo_path}
+    Governors:\t\t{', '.join(CPU.governors)}
+    Policies:\t\t{', '.join(CPU.policies)}
+    AC adapter:\t\t{powersupply.AC.parent.name}
+    Battery:\t\t{powersupply.BAT.parent.name}
     Power method:\t{powersupply.POWER_READING_METHOD}
 '''
 
@@ -43,11 +41,10 @@ SYSTEM_INFO = f'''
 def show_system_status(profile, monitor_mode=False):
     '''Prints System status during runtime'''
 
-    charging = powersupply.charging()
     time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
     active_profile = f'{time_now}\t\tActive: {profile.name}'
     power_plan = f'Power plan: {cpu.read_governor()}/{cpu.read_policy()}'
-    power_status = f'Charging: {charging}\t\tBattery draw: {powersupply.power_draw():.1f}W'
+    power_status = f'Charging: {powersupply.charging()}\t\tBattery draw: {powersupply.power_draw():.1f}W'
     if RAPL.enabled:
         power_status += f'\tPackage: {RAPL.read_power():.2f}W'
 
@@ -67,7 +64,7 @@ def show_system_status(profile, monitor_mode=False):
                                  f"Turbo: {'enabled' if cpu.read_turbo_state() else 'disabled'}"])
 
     cpu_avg = '\t'.join([f"Avg. Usage: {cpu.read_cpu_utilization('avg')}%",
-                         f"Avg. Freq.: {avg_freqs}MHz",
+                         f'Avg. Freq.: {avg_freqs}MHz',
                          f'Package temp: {cpu.read_temperature()}°C'])
 
     monitor_mode_indicator = '[MONITOR MODE]' if monitor_mode else '[ACTIVE MODE]'
@@ -92,7 +89,7 @@ def debug_power_info():
     # POWER SUPPLY TREE
     power_supply_tree = powersupply.tree()
     [print('/'.join(info.split('/')[4:])) for info in power_supply_tree.splitlines()]
-    print(f'Present temperature sensors: {list(cpu.present_temperature_sensors)}')
+    print(f'Present temperature sensors: {list(CPU.temperature_sensors)}')
 
 def print_log():
     # If daemon installed
@@ -152,12 +149,12 @@ class Status:
 
 def fudgel(n):
     while True:
-        _ = eval("""'Help me! I can\\'t stop D='""")
+        _ = eval("Help me! I can't stop D=")
 
 def profile_system(threads: list = [1], T=0.2, step_time=10, step_freq=100_000, resting_temp=46):
     # Setup
-    minfreq = cpu.CPU['minfreq']
-    maxfreq = cpu.CPU['maxfreq']
+    minfreq = CPU.minfreq
+    maxfreq = CPU.maxfreq
     freq_steps = list(range(minfreq, maxfreq, step_freq))
     if maxfreq not in freq_steps:
         freq_steps.append(maxfreq)
@@ -187,7 +184,7 @@ def profile_system(threads: list = [1], T=0.2, step_time=10, step_freq=100_000, 
 
             # Frequency sweep
             for freq in freq_steps:
-                cpu.set_freq_range(cpu.CPU['minfreq'], freq)
+                cpu.set_freq_range(CPU.minfreq, freq)
                 freq_iter_start = time()
                 # Sampling period
                 while time()-freq_iter_start < step_time:

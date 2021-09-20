@@ -20,15 +20,23 @@ def process_instances(name: str) -> int:
 def process_already_running(name: str = 'cpuauto') -> bool:
     return process_instances(name) > 1
 
+def read_datafile(path, dtype=str):
+    '''Reads first line of path (str or Path), strips and converts to dtype.'''
+    with open(path, "r") as file:
+        data = file.readline().strip()
+    return dtype(data)
+
+def path_is_writable(path) -> bool:
+    try:
+        path.write_text(path.read_text())
+    except PermissionError:
+        return False
+    else:
+        return True
+
 def uninstall():
     shell('/opt/cpuauto/uninstall')
     print('SEE YOU SPACE COWBOY...')
 
 def enable_daemon():
     shell('/opt/cpuauto/enable-daemon')
-
-def read_datafile(path, dtype=str):
-    '''Reads first line of path (str or Path), strips and converts to dtype.'''
-    with open(path, "r") as file:
-        data = file.readline().strip()
-    return dtype(data)
