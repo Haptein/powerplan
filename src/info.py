@@ -14,7 +14,7 @@ import cpu
 import powersupply
 from cpu import CPU
 
-VERSION = '0.3'
+VERSION = '0.4'
 
 # Information display
 
@@ -149,7 +149,7 @@ class Status:
 
 def fudgel(n):
     while True:
-        _ = eval("Help me! I can't stop D=")
+        _ = eval('"Help me! I can\'t stop D="')
 
 def profile_system(threads: list = [1], T=0.2, step_time=10, step_freq=100_000, resting_temp=46):
     # Setup
