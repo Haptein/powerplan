@@ -127,7 +127,7 @@ class Status:
         self.package_power.append(self.intelrapl.read_power())
         self.core_power.append(self.intelrapl.read_power('core'))
         self.battery_power.append(powersupply.power_draw())
-        self.freq_lim.append(shell.read_datafile(cpu.CPUFREQ_DIR + 'scaling_max_freq', dtype=int)/1000)
+        self.freq_lim.append(shell.read(cpu.CPUFREQ_DIR + 'scaling_max_freq', dtype=int)/1000)
         self.max_freq.append(max(freq_list))
         self.running_threads.append(running_threads)
 

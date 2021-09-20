@@ -20,7 +20,7 @@ def process_instances(name: str) -> int:
 def process_already_running(name: str = 'cpuauto') -> bool:
     return process_instances(name) > 1
 
-def read_datafile(path, dtype=str):
+def read(path, dtype=str):
     '''Reads first line of path (str or Path), strips and converts to dtype.'''
     with open(path, "r") as file:
         data = file.readline().strip()

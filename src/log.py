@@ -10,5 +10,5 @@ def log_warning(message):
     print(message)
 
 def log_info(message):
-    message = 'Info: ' + message 
+    message = 'Info: ' + message
     print(message)

@@ -5,7 +5,7 @@ from time import time
 from pathlib import Path
 
 import log
-from shell import shell, is_root, read_datafile, path_is_writable
+from shell import shell, is_root, read, path_is_writable
 
 '''
 File structure:
@@ -41,10 +41,10 @@ class CPUSpec:
         self.physical_cores = len(self.thread_siblings)
         self.logical_cores = len(list_cores())
         # Limits
-        self.minfreq = read_datafile(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int)
-        self.maxfreq = read_datafile(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
-        self.governors = read_datafile(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
-        self.policies = read_datafile(CPUFREQ_DIR + 'energy_performance_available_preferences').split(' ')
+        self.minfreq = read(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int)
+        self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
+        self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
+        self.policies = read(CPUFREQ_DIR + 'energy_performance_available_preferences').split(' ')
         self.temp_sensor_available = self._temp_sensor_available()
         self.crit_temp = read_crit_temp()
         self._set_turbo_variables()
@@ -55,10 +55,10 @@ class CPUSpec:
         Kernel (cpufreq) : intel_cpufreq, acpi-cpufreq, speedstep-lib, powernow-k8, pcc-cpufreq, p4-clockmod
         '''
 
-        driver = read_datafile(CPU_DIR + 'cpufreq/policy0/scaling_driver').lower()
+        driver = read(CPU_DIR + 'cpufreq/policy0/scaling_driver').lower()
         if driver == 'intel_pstate':
             self.driver = driver
-            self.basefreq = read_datafile(CPUFREQ_DIR + 'base_frequency', dtype=int)
+            self.basefreq = read(CPUFREQ_DIR + 'base_frequency', dtype=int)
             self.min_perf_pct = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
             self.max_perf_pct = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
         else:
@@ -125,15 +125,15 @@ class CPUSpec:
 class RaplLayer:
     def __init__(self, layer_path: Path):
         # Assumes name, enabled, energy_uj and max_energy_range_uj exist
-        self.name = read_datafile(layer_path/'name')
-        self.enabled = read_datafile(layer_path/'enabled', int)
-        self.max_energy_range_uj = read_datafile(layer_path/'max_energy_range_uj', int)
+        self.name = read(layer_path/'name')
+        self.enabled = read(layer_path/'enabled', int)
+        self.max_energy_range_uj = read(layer_path/'max_energy_range_uj', int)
         self.energy_uj_path = layer_path/'energy_uj'
         # Initialize reading
         self.last_time, self.last_energy = self.read_time_energy()
 
     def read_time_energy(self):
-        return time(), read_datafile(self.energy_uj_path, int)
+        return time(), read(self.energy_uj_path, int)
 
     def read_power(self):
         # Read
@@ -165,7 +165,7 @@ class IntelRapl:
         '''If exists and enabled, create RaplLayer objs for each layer found.'''
         enabled_path = Path('/sys/class/powercap/intel-rapl/enabled')
         if enabled_path.exists() and is_root():
-            self.enabled = read_datafile(enabled_path, bool)
+            self.enabled = read(enabled_path, bool)
         else:
             self.enabled = False
 
@@ -200,7 +200,7 @@ def cpu_ranges_to_list(cpu_ranges: str) -> list:
 
 def list_cores(status='present') -> list:
     assert status in ['offline', 'online', 'present']
-    cpu_ranges = read_datafile(CPU_DIR + status)
+    cpu_ranges = read(CPU_DIR + status)
     if not cpu_ranges:
         return []
     else:
@@ -251,7 +251,7 @@ def read_crit_temp() -> int:
 # CPU Freq Scaling
 
 def read_governor(core_id: int = 0) -> str:
-    return read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor')
+    return read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor')
 
 def set_governor(governor):
     assert governor in CPU.governors
@@ -260,7 +260,7 @@ def set_governor(governor):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
 
 def read_policy(core_id: int = 0) -> str:
-    return read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
+    return read(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
 
 def set_policy(policy):
     assert policy in CPU.policies
@@ -271,13 +271,13 @@ def set_policy(policy):
 def read_current_freq(divisor: int = 1) -> dict:
     ''' Returns dict of core_id:cur_freq, divided by divisor and rounded'''
     cores_online = list_cores('online')
-    cur_freqs = [int(read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_cur_freq', int) / divisor)
+    cur_freqs = [int(read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_cur_freq', int) / divisor)
                  for core_id in cores_online]
     return dict(zip(cores_online, cur_freqs))
 
 def read_freq_range(core_id: int = 0) -> list:
-    scaling_min_freq = read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
-    scaling_max_freq = read_datafile(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq', int)
+    scaling_min_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
+    scaling_max_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq', int)
     return [scaling_min_freq, scaling_max_freq]
 
 def set_freq_range(min_freq: int, max_freq: int):
@@ -293,7 +293,7 @@ def set_freq_range(min_freq: int, max_freq: int):
 
 def read_perf_range() -> tuple:
     if CPU.driver == 'intel_pstate':
-        return read_datafile(CPU.min_perf_pct, int), read_datafile(CPU.max_perf_pct, int)
+        return read(CPU.min_perf_pct, int), read(CPU.max_perf_pct, int)
 
 def set_perf_range(min_perf_pct: int, max_perf_pct: int):
     # This setting only exists for intel_pstate
@@ -332,7 +332,7 @@ def read_physical_core_status(core_num: int) -> bool:
     else:
         # Just test the first one,
         # not expecting a case where other processes turn off cores
-        return bool(read_datafile(CPU_DIR + f'cpu{core_ids[0]}/online', int))
+        return bool(read(CPU_DIR + f'cpu{core_ids[0]}/online', int))
 
 def set_physical_cores_online(num_cores: int):
     '''Sets the number of online physical cores, turns off the rest'''

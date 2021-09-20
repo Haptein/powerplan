@@ -2,7 +2,7 @@ from glob import glob
 from pathlib import Path
 
 import log
-from shell import read_datafile, shell
+from shell import read, shell
 
 POWER_DIR = '/sys/class/power_supply/'
 
@@ -13,7 +13,7 @@ def power_supply_detection() -> tuple:
     # /type values: "Battery", "UPS", "Mains", "USB", "Wireless"
     ac_devices = glob(f'{POWER_DIR}A*/type')
     for ac in ac_devices:
-        if read_datafile(ac) == 'Mains':
+        if read(ac) == 'Mains':
             ac_device_path = Path(ac).with_name('online')
             if ac_device_path.exists():
                 break
@@ -22,7 +22,7 @@ def power_supply_detection() -> tuple:
 
     bat_devices = glob(f'{POWER_DIR}BAT*/type')
     for bat in bat_devices:
-        if read_datafile(bat) == 'Battery':
+        if read(bat) == 'Battery':
             bat_device_path = Path(bat).with_name('status')
             if bat_device_path.exists():
                 break
@@ -75,7 +75,7 @@ def charge_left() -> int:
     '''Returns battery charge left (mAH)'''
     charge_now = BAT.with_name('charge_now')
     if charge_now.exists():
-        return read_datafile(charge_now, int)
+        return read(charge_now, int)
     else:
         return -1
 
