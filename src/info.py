@@ -8,7 +8,6 @@ from multiprocessing import Pool
 
 import psutil
 
-import log
 import shell
 import cpu
 import powersupply
@@ -91,12 +90,6 @@ def debug_power_info():
     [print('/'.join(info.split('/')[4:])) for info in power_supply_tree.splitlines()]
     print(f'Present temperature sensors: {list(CPU.temperature_sensors)}')
 
-def print_log():
-    # If daemon installed
-    if Path('/etc/systemd/system/cpuauto.service').exists():
-        print(shell.shell('journalctl -u cpuauto.service'))
-    else:
-        log.log_error("cpuauto.service is not installed. Run 'cpuauto --daemon' to install daemon (systemd).")
 
 # CPU power / performance profiling
 

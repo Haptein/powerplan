@@ -2,7 +2,6 @@
 from sys import exit
 from time import time
 from argparse import ArgumentParser, SUPPRESS
-
 from psutil import Process
 
 import log
@@ -11,18 +10,18 @@ import info
 import shell
 from config import read_profiles, get_triggered_profile
 
-
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-l', '--list', action='store_true', help='list profiles and exit')
 argparser.add_argument('-s', '--status', action='store_true', help="display system status periodically")
 argparser.add_argument('-p', '--profile', default='', help='activate the specified profile and exit')
 argparser.add_argument('-r', '--reload', action='store_true', help='enable config file hot-reloading')
 argparser.add_argument('-b', '--benchmark', action='store_true', help='stresses CPU and records power/performance metrics to a csv file')
-argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
 argparser.add_argument('--daemon', action='store_true', help='install and enable cpuauto as a daemon (systemd)')
 argparser.add_argument('--log', action='store_true', help='print daemon log.')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
+argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
+argparser.add_argument('--log-level-info', action='store_true', help=SUPPRESS)
 ARGS = argparser.parse_args()
 
 

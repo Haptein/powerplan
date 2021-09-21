@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/cpuauto
+ExecStart=/usr/bin/cpuauto --log-level-info
 User=root
 Restart=no
 
