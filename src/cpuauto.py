@@ -81,7 +81,7 @@ if __name__ == '__main__':
         exit(0)
 
     if ARGS.log:
-        info.print_log()
+        log.print_log()
         exit(0)
 
     # Stuff that needs root
