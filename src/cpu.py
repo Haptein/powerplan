@@ -26,7 +26,7 @@ ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
 
 
 class CPUSpec:
-    ''' Stores all static static attributes and paths (that vary between models and drivers) '''
+    ''' Stores all static CPU attributes and paths (that vary between models and drivers) '''
 
     def __init__(self):
         if list_cores('present') != list_cores('online'):
@@ -45,7 +45,7 @@ class CPUSpec:
         self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
         self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
         self.policies = read(CPUFREQ_DIR + 'energy_performance_available_preferences').split(' ')
-        self.temp_sensor_available = self._temp_sensor_available()
+        self.temp_sensor = self._available_temp_sensor()
         self.crit_temp = read_crit_temp()
         self._set_turbo_variables()
 
@@ -79,17 +79,19 @@ class CPUSpec:
                 siblings_set.add(siblings)
         return sorted(siblings_set)
 
-    def _temp_sensor_available(self):
-        self.temperature_sensors = psutil.sensors_temperatures().keys()
-        if not set(self.temperature_sensors).intersection(ALLOWED_TEMP_SENSORS):
+    def _available_temp_sensor(self):
+        '''Returns first available sensor in ALLOWED_TEMP_SENSORS, or None '''
+        temperature_sensors = psutil.sensors_temperatures()
+        for sensor in ALLOWED_TEMP_SENSORS:
+            if sensor in temperature_sensors:
+                return sensor
+        else:
             msg = ("Couldn't detect a known CPU temperature sensor."
                    f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
-                   f"\n\tDetected sensors were: {self.temperature_sensors}"
+                   f"\n\tDetected sensors were: {temperature_sensors}"
                    "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
             log.log_warning(msg)
-            return False
-        else:
-            return True
+            return None
 
     def _set_turbo_variables(self):
         #  turbo_allowed, turbo_file, turbo_inverse
@@ -229,24 +231,17 @@ def read_cpu_utilization(mode='max'):
         return dict(zip(cores_online, percpu_utilization))
 
 def read_temperature() -> float:
-    temperature_sensors = psutil.sensors_temperatures()
-
-    for sensor in ALLOWED_TEMP_SENSORS:
-        if sensor in temperature_sensors:
-            return temperature_sensors[sensor][0].current
+    if CPU.temp_sensor:
+        return psutil.sensors_temperatures()[CPU.temp_sensor][0].current
     else:
         return -1
 
 def read_crit_temp() -> int:
-    temperature_sensors = psutil.sensors_temperatures()
-
-    for sensor in ALLOWED_TEMP_SENSORS:
-        if sensor in temperature_sensors:
-            return int(temperature_sensors[sensor][0].critical)
+    if CPU.temp_sensor:
+        return int(psutil.sensors_temperatures()[CPU.temp_sensor][0].critical)
     else:
         # If no crit temp found default to 100
         return 100
-
 
 # CPU Freq Scaling
 
