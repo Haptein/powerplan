@@ -46,7 +46,7 @@ class CPUSpec:
         self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
         self.policies = read(CPUFREQ_DIR + 'energy_performance_available_preferences').split(' ')
         self.temp_sensor = self._available_temp_sensor()
-        self.crit_temp = read_crit_temp()
+        self.crit_temp = int(psutil.sensors_temperatures()[self.temp_sensor][0].critical)
         self._set_turbo_variables()
 
         '''
@@ -186,6 +186,13 @@ class IntelRapl:
             return self.layers[name].read_power()
         else:
             return -1
+
+def get_rapl():
+    ''' Returns an instance of appropriate Rapl Class'''
+    #  if CPU.driver == 'intel_pstate':
+    return IntelRapl()
+    #  elif CPU.driver == 'amd_driver_with_rapl_implementation':
+    #      return AMDRapl()
 
 # CPU STATUS
 
@@ -353,7 +360,7 @@ def set_tdp_limits(PL1: int, PL2: int):
     If PL1 or PL2 is zero, this does nothing.
     '''
     assert PL1 <= PL2
-    if CPU.driver == 'intel_pstate' and PL1 and PL2:
+    if CPU.driver == 'intel_pstate' and RAPL.layers['package-0'].enabled and PL1 and PL2:
         PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
         PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
         if PL1_path.exists() and PL2_path.exists():
@@ -366,3 +373,4 @@ def set_tdp_limits(PL1: int, PL2: int):
 
 
 CPU = CPUSpec()
+RAPL = get_rapl()
