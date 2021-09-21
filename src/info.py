@@ -144,8 +144,11 @@ def fudgel(n):
     while True:
         _ = eval('"Help me! I can\'t stop D="')
 
-def profile_system(threads: list = [1], T=0.2, step_time=10, step_freq=100_000, resting_temp=46):
+def profile_system(threads: list = [1], T=0.5, step_time=5, step_freq=100_000, resting_temp=46):
     # Setup
+    print(f'Power Plan: {cpu.read_governor()} {cpu.read_policy()}\n')
+    # Print tdp limits maybe
+
     minfreq = CPU.minfreq
     maxfreq = CPU.maxfreq
     freq_steps = list(range(minfreq, maxfreq, step_freq))
@@ -197,7 +200,7 @@ def profile_system(threads: list = [1], T=0.2, step_time=10, step_freq=100_000, 
 # Bench
 def fudgel_n_times(n):
     for i in range(n):
-        _ = eval("Help me! I can't stop D=")
+        _ = eval('"Help me! I can\'t stop D="')
 
 def bench_freq_lim(freq_lim: int, n_iter: int = 1000):
     # Start vars

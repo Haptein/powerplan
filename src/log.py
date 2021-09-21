@@ -5,10 +5,7 @@ import shell
 
 LOG_LEVEL = 'warning'
 if '--log-level-info' in sys.argv:
-    print('info')
     LOG_LEVEL = 'info'
-else:
-    print('noinfo')
 
 def log_error(message):
     message = '[ERROR] ' + message
