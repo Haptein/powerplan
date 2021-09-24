@@ -10,7 +10,7 @@ import shell
 import powersupply
 import cpu
 from cpu import CPU
-from log import log_error
+from log import log_error, log_warning
 
 CONFIG_PATH = '/etc/cpuauto.toml'
 
@@ -121,6 +121,9 @@ class CpuProfile:
 
     def __post_init__(self):
         # Validates profile values
+        self.has_trigger = bool(self.triggerapps)
+        if self.name != 'DEFAULT' and not self.has_trigger:
+            log_warning(f'Profile "{self.name}" has no trigger applications configured.')
 
         # Polling period
         for value_name, value in zip(('ac_pollingperiod', 'bat_pollingperiod'),
@@ -253,7 +256,10 @@ def read_profiles():
 def get_triggered_profile(profiles: OrderedDict):
     '''Returns triggered CpuProfile object according to running processes'''
     # Check running processes
-    procs = shell.read_procs()
+    if any([profiles[profile].has_trigger for profile in profiles]):
+        procs = shell.read_procs()
+    else:
+        procs = set()
 
     # check profile trigger apps against procs
     for cpuprofile in profiles.values():
