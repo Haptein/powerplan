@@ -133,6 +133,7 @@ class RaplLayer:
         self.energy_uj_path = layer_path/'energy_uj'
         # Initialize reading
         self.last_time, self.last_energy = self.read_time_energy()
+        log.log_info(f'IntelRapl layer initialized: {self.name}')
 
     def read_time_energy(self):
         return time(), read(self.energy_uj_path, int)
@@ -167,8 +168,10 @@ class IntelRapl:
         '''If exists and enabled, create RaplLayer objs for each layer found.'''
         enabled_path = Path('/sys/class/powercap/intel-rapl/enabled')
         if enabled_path.exists() and is_root():
+            log.log_info('IntelRapl is enabled.')
             self.enabled = read(enabled_path, bool)
         else:
+            log.log_info('IntelRapl is disabled.')
             self.enabled = False
 
         if not self.enabled:

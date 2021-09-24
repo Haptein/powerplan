@@ -11,13 +11,11 @@ import psutil
 import shell
 import cpu
 import powersupply
-from cpu import CPU
+from cpu import CPU, RAPL
 
 VERSION = '0.4'
 
 # Information display
-
-RAPL = cpu.IntelRapl()
 
 SYSTEM_INFO = f'''
     System
