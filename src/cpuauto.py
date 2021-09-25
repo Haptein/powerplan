@@ -29,7 +29,10 @@ def single_activation(profile):
     profiles = read_profiles()
     if profile in profiles:
         profiles[ARGS.profile].apply()
-        print(f'Profile {profile} active.')
+        if ARGS.status:
+            info.show_system_status(profiles[ARGS.profile], monitor_mode=True)
+        else:
+            print(f'Profile {profile} active.')
     else:
         log.log_error(f'Profile "{ARGS.profile}" not found in config file.')
 
@@ -108,8 +111,6 @@ if __name__ == '__main__':
     # Activate profile and exit
     if ARGS.profile:
         single_activation(ARGS.profile)
-        if ARGS.status:
-            info.show_system_status()
         exit(0)
 
     # Debug info

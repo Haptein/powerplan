@@ -92,7 +92,7 @@ def read_process_cpu_mem(process):
     return process.cpu_percent(), process.memory_percent()
 
 def debug_runtime_info(process, profile, iteration_start):
-    cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(process)
+    cpuauto_util, cpuauto_mem = read_process_cpu_mem(process)
     time_iter = (time() - iteration_start) * 1000  # ms
     print(f'Process resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms')
 
