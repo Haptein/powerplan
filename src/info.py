@@ -88,6 +88,13 @@ def debug_power_info():
     [print('/'.join(info.split('/')[4:])) for info in power_supply_tree.splitlines()]
     print(f'Present temperature sensors: {list(psutil.sensors_temperatures())}')
 
+def read_process_cpu_mem(process):
+    return process.cpu_percent(), process.memory_percent()
+
+def debug_runtime_info(process, profile, iteration_start):
+    cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(process)
+    time_iter = (time() - iteration_start) * 1000  # ms
+    print(f'Process resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms')
 
 # CPU power / performance profiling
 

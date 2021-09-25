@@ -25,11 +25,6 @@ argparser.add_argument('--log-level-info', action='store_true', help=SUPPRESS)
 ARGS = argparser.parse_args()
 
 
-def debug_runtime_info(process, profile, iteration_start):
-    cpuauto_util, cpuauto_mem = cpu.read_process_cpu_mem(process)
-    time_iter = (time() - iteration_start) * 1000  # ms
-    print(f'Process resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms')
-
 def single_activation(profile):
     profiles = read_profiles()
     if profile in profiles:
@@ -59,7 +54,7 @@ def main_loop(monitor_mode):
         if ARGS.status:
             info.show_system_status(profile, monitor_mode)
         if ARGS.debug:
-            debug_runtime_info(process, profile, iteration_start)
+            info.debug_runtime_info(process, profile, iteration_start)
 
         # Then sleep needed time
         profile.sleep(iteration_start=iteration_start)
