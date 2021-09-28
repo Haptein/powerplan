@@ -18,6 +18,7 @@ argparser.add_argument('-p', '--profile', default='', help='activate the specifi
 argparser.add_argument('-r', '--reload', action='store_true', help='enable config file hot-reloading')
 argparser.add_argument('-b', '--benchmark', action='store_true', help='stresses CPU and records power/performance metrics to a csv file')
 argparser.add_argument('--daemon', action='store_true', help='install and enable cpuauto as a daemon (systemd)')
+argparser.add_argument('--persistent', action='store_true', help='Use this if your profile is reset by your computer.')
 argparser.add_argument('--log', action='store_true', help='print daemon log.')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
@@ -44,6 +45,7 @@ def main_loop(monitor_mode):
     if ARGS.debug:
         process = Process()
 
+    last_profile_name = None
     while True:
         iteration_start = time()
 
@@ -53,7 +55,7 @@ def main_loop(monitor_mode):
 
         # Get profile and apply
         profile = process_reader.triggered_profile(profiles)
-        if not monitor_mode:
+        if not monitor_mode and profile.name != last_profile_name:
             profile.apply()
 
         # Everything else
@@ -61,6 +63,9 @@ def main_loop(monitor_mode):
             info.show_system_status(profile, monitor_mode)
         if ARGS.debug:
             info.debug_runtime_info(process, profile, iteration_start)
+
+        if not ARGS.persistent:
+            last_profile_name = profile.name
 
         # Then sleep needed time
         profile.sleep(iteration_start=iteration_start)
