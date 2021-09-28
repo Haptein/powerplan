@@ -8,7 +8,8 @@ import log
 import cpu
 import info
 import shell
-from config import read_profiles, get_triggered_profile
+from config import read_profiles
+from process import ProcessReader
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-l', '--list', action='store_true', help='list profiles and exit')
@@ -38,6 +39,7 @@ def single_activation(profile):
 
 def main_loop(monitor_mode):
     profiles = read_profiles()
+    process_reader = ProcessReader(profiles)
 
     if ARGS.debug:
         process = Process()
@@ -47,9 +49,10 @@ def main_loop(monitor_mode):
 
         if ARGS.reload:
             profiles = read_profiles()
+            process_reader.update_triggerapps(profiles)
 
         # Get profile and apply
-        profile = get_triggered_profile(profiles)
+        profile = process_reader.triggered_profile(profiles)
         if not monitor_mode:
             profile.apply()
 

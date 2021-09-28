@@ -6,7 +6,6 @@ from time import time, sleep
 from dataclasses import dataclass
 from collections import OrderedDict
 
-import shell
 import powersupply
 import cpu
 from cpu import CPU
@@ -252,21 +251,6 @@ def read_profiles():
     # We return PROFILES as an OrderedDict, ordered by priority ascending (so that lower value go first)
     sorted_name_profile_pairs = [(profile.name, profile) for profile in sorted(PROFILES.values())]
     return OrderedDict(sorted_name_profile_pairs)
-
-def get_triggered_profile(profiles: OrderedDict):
-    '''Returns triggered CpuProfile object according to running processes'''
-    # Check running processes
-    if any([profiles[profile].has_trigger for profile in profiles]):
-        procs = shell.read_procs()
-    else:
-        procs = set()
-
-    # check profile trigger apps against procs
-    for cpuprofile in profiles.values():
-        if cpuprofile.triggerapp_present(procs):
-            return cpuprofile
-    else:
-        return profiles['DEFAULT']
 
 
 if __name__ == '__main__':
