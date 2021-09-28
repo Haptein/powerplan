@@ -74,7 +74,7 @@ class CpuProfile:
     triggerapps: list
 
     def apply(self) -> float:
-        ''' Applies profile configuration and returns sleep time needed (after compensation)'''
+        ''' Applies profile configuration'''
         if powersupply.charging():
             cpu.set_physical_cores_online(self.ac_cores_online)
             cpu.set_freq_range(self.ac_minfreq, self.ac_maxfreq)
@@ -92,7 +92,7 @@ class CpuProfile:
             cpu.set_policy(self.bat_policy)
             cpu.set_tdp_limits(self.bat_tdp_sutained, self.bat_tdp_burst)
 
-    def triggerapp_present(self, procs: set):
+    def triggerapp_present(self, procs: set) -> bool:
         for app in self.triggerapps:
             if app[:15] in procs:
                 return True
