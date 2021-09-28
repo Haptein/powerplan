@@ -51,7 +51,7 @@ def main_loop(monitor_mode):
 
         if ARGS.reload:
             profiles = read_profiles()
-            process_reader.update_triggerapps(profiles)
+            process_reader.reset(profiles)
 
         # Get profile and apply
         profile = process_reader.triggered_profile(profiles)

@@ -10,10 +10,10 @@ class ProcessReader:
     '''
 
     def __init__(self, profiles=None, max_retries=5):
+        self.triggerapps = self._get_triggerapps(profiles)
         self.triggerapps_found = set()
-        self.pids_last = set()
         self.pid_names = dict()
-        self.update_triggerapps(profiles)
+        self.pids_last = set()
         self.update()
 
     def update(self):
@@ -43,9 +43,14 @@ class ProcessReader:
         self.pids_last = pids_new
         self.triggerapps_found = set(self.pid_names.values())
 
-    def update_triggerapps(self, profiles):
-        '''Updates self.triggerapps, useful for hot-reloading profiles'''
+    def reset(self, profiles):
+        '''
+        Updates self.triggerapps and clears self.pids_last
+        useful for hot-reloading profiles
+        '''
         self.triggerapps = self._get_triggerapps(profiles)
+        self.pid_names = dict()
+        self.pids_last = set()
 
     def _get_triggerapps(self, profiles=None) -> set:
         if profiles is None:
