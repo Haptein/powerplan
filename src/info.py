@@ -52,7 +52,7 @@ def show_system_status(profile, monitor_mode=False):
     utils = '\t'.join([str(util) for util in psutil.cpu_percent(percpu=True)])
 
     # Read current frequencies in MHz
-    freq_list = cpu.read_current_freq(divisor=1000).values()
+    freq_list = cpu.read_current_freq().values()
     avg_freqs = int(sum(freq_list)/num_cores_online)
     freqs = '\t'.join([str(freq) for freq in freq_list])
 
@@ -117,7 +117,7 @@ class Status:
         self.name_suffix = name_suffix + gov + pol
 
     def update(self, running_threads=None):
-        freq_list = cpu.read_current_freq(divisor=1000).values()
+        freq_list = cpu.read_current_freq().values()
         self.time.append(time())
         self.avg_util.append(cpu.read_cpu_utilization('avg'))
         self.avg_freq.append(int(sum(freq_list)/self.cores_online))

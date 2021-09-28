@@ -270,11 +270,12 @@ def set_policy(policy):
         for core_id in list_cores('online'):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
 
-def read_current_freq(divisor: int = 1) -> dict:
-    ''' Returns dict of core_id:cur_freq, divided by divisor and rounded'''
+def read_current_freq() -> dict:
+    ''' Returns dict of core_id:cur_freq'''
     cores_online = list_cores('online')
-    cur_freqs = [int(read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_cur_freq', int) / divisor)
-                 for core_id in cores_online]
+    cpuinfo = Path('/proc/cpuinfo')
+    cur_freqs = [int(float(line.split(':')[-1])) for line in cpuinfo.read_text().splitlines()
+                 if line.startswith('cpu M')]
     return dict(zip(cores_online, cur_freqs))
 
 def read_freq_range(core_id: int = 0) -> list:
