@@ -361,7 +361,7 @@ def set_tdp_limits(PL1: int, PL2: int):
     If PL1 or PL2 is zero, this does nothing.
     '''
     assert PL1 <= PL2
-    if CPU.driver == 'intel_pstate' and RAPL.layers['package-0'].enabled and PL1 and PL2:
+    if CPU.driver == 'intel_pstate' and RAPL.enabled and PL1 and PL2:
         PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
         PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
         if PL1_path.exists() and PL2_path.exists():
