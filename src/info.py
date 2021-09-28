@@ -13,7 +13,7 @@ import cpu
 import powersupply
 from cpu import CPU, RAPL
 
-VERSION = '0.4'
+VERSION = '0.5'
 
 # Information display
 

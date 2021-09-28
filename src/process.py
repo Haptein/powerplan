@@ -1,4 +1,3 @@
-import os
 from glob import glob
 
 import config
@@ -12,29 +11,23 @@ class ProcessReader:
 
     def __init__(self, profiles=None, max_retries=5):
         self.triggerapps_found = set()
+        self.pids_last = set()
         self.pid_names = dict()
-        self.pid_last = 0
-        self.max_retries = max_retries
         self.update_triggerapps(profiles)
         self.update()
 
     def update(self):
         # ensure previously identified pids are checked
-        comms = [f'/proc/{pid}/comm' for pid in self.pid_names]
-        for i in range(self.max_retries):
-            try:
-                comms += sorted(glob('/proc/[0-9]*/comm'), key=os.path.getmtime)
-            except FileNotFoundError:
-                # procs can come and go very quickly, this is expected
-                continue
-            else:
-                break
-
-        for comm in comms:
+        pids_new = set()
+        comms = glob('/proc/[0-9]*/comm')
+        for comm in comms + [f'/proc/{pid}/comm' for pid in self.pid_names]:
             pid = int(comm.split('/')[2])
-            if pid not in self.pid_names and pid <= self.pid_last:
-                # need to check for pid_max
+
+            # If pid was seen last time but wasn't of interest
+            if pid in self.pids_last and pid not in self.pid_names:
+                pids_new.add(pid)
                 continue
+
             try:
                 with open(comm, 'r') as file:
                     proc_name = file.readline().strip()
@@ -44,8 +37,10 @@ class ProcessReader:
                 # process exited before being read
                 if pid in self.pid_names:
                     _ = self.pid_names.pop(pid)
+            else:
+                pids_new.add(pid)
 
-        self.pid_last = pid
+        self.pids_last = pids_new
         self.triggerapps_found = set(self.pid_names.values())
 
     def update_triggerapps(self, profiles):
