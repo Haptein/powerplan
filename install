@@ -11,4 +11,4 @@ chmod 755 /opt/cpuauto/src/cpuauto.py
 chmod 755 /opt/cpuauto/uninstall
 chmod 755 /usr/bin/cpuauto
 chmod 744 /opt/cpuauto/enable-daemon
-chmod 744 /opt/cpuauto/cpuauto.service
+chmod 644 /opt/cpuauto/cpuauto.service
