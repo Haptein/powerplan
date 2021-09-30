@@ -3,23 +3,21 @@ from pathlib import Path
 
 import shell
 
-LOG_LEVEL = 'warning'
-if '--log-level-info' in sys.argv:
-    LOG_LEVEL = 'info'
+VERBOSE = '--verbose' in sys.argv
 
 def log_error(message):
     message = '[ERROR] ' + message
-    print(message)
+    print(message, flush=True)
     sys.exit(1)
 
 def log_warning(message):
     message = 'Warning: ' + message
-    print(message)
+    print(message, flush=True)
 
 def log_info(message):
-    if LOG_LEVEL == 'info':
+    if VERBOSE:
         message = 'Info: ' + message
-        print(message)
+        print(message, flush=True)
 
 def print_log():
     # If daemon installed

@@ -1,12 +1,14 @@
 [Unit]
 Description=cpuauto service
-After=network.target
+After=multi-user.target
 
 [Service]
-Type=simple
-ExecStart=/usr/bin/cpuauto --log-level-info
 User=root
 Restart=no
+Type=simple
+ExecStart=/usr/bin/cpuauto --verbose
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
