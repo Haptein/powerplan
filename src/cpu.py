@@ -1,7 +1,6 @@
 #!/usr/bin/python3
-
+import time
 import psutil
-from time import time
 from pathlib import Path
 
 import log
@@ -136,7 +135,7 @@ class RaplLayer:
         log.log_info(f'IntelRapl layer initialized: {self.name}')
 
     def read_time_energy(self):
-        return time(), read(self.energy_uj_path, int)
+        return time.time(), read(self.energy_uj_path, int)
 
     def read_power(self):
         # Read
