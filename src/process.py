@@ -9,7 +9,7 @@ class ProcessReader:
     comm files if not of interest
     '''
 
-    def __init__(self, profiles=None, max_retries=5):
+    def __init__(self, profiles=None):
         self.triggerapps = self._get_triggerapps(profiles)
         self.triggerapps_found = set()
         self.pid_names = dict()
@@ -33,8 +33,9 @@ class ProcessReader:
                     proc_name = file.readline().strip()
                     if proc_name in self.triggerapps:
                         self.pid_names[pid] = proc_name
-            except FileNotFoundError:
-                # process exited before being read
+            except (FileNotFoundError, ProcessLookupError):
+                # FileNotFoundError : process exited before being read
+                # ProcessLookupError: process exited while being open, before readline()
                 if pid in self.pid_names:
                     _ = self.pid_names.pop(pid)
             else:
