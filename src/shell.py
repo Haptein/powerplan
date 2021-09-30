@@ -11,9 +11,6 @@ def shell(command: str, return_stdout: bool = True) -> str:
 def is_root():
     return getuid() == 0
 
-def read_procs() -> set:
-    return set(shell("grep -sh . /proc/*/comm").splitlines())  # 2000 : 13.47s
-
 def process_instances(name: str) -> int:
     return shell("grep -sh . /proc/*/comm").splitlines().count(name)
 
