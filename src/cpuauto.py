@@ -5,25 +5,24 @@ from argparse import ArgumentParser, SUPPRESS
 from psutil import Process
 
 import log
-import cpu
 import info
 import shell
 from config import read_profiles
 from process import ProcessReader
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
+argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
 argparser.add_argument('-l', '--list', action='store_true', help='list profiles and exit')
-argparser.add_argument('-s', '--status', action='store_true', help="display system status periodically")
 argparser.add_argument('-p', '--profile', default='', help='activate the specified profile and exit')
 argparser.add_argument('-r', '--reload', action='store_true', help='enable config file hot-reloading')
-argparser.add_argument('-b', '--benchmark', action='store_true', help='stresses CPU and records power/performance metrics to a csv file')
+argparser.add_argument('-s', '--status', action='store_true', help="display system status periodically")
 argparser.add_argument('--daemon', action='store_true', help='install and enable cpuauto as a daemon (systemd)')
-argparser.add_argument('--persistent', action='store_true', help='Use this if your profile is reset by your computer.')
-argparser.add_argument('--log', action='store_true', help='print daemon log.')
+argparser.add_argument('--log', action='store_true', help='print daemon log')
+argparser.add_argument('--persistent', action='store_true', help='use this if your profile is reset by your computer')
+argparser.add_argument('--test', action='store_true', help='stress CPU and record power/performance metrics to a csv file')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
-argparser.add_argument('-v', '--version', action='store_true', help='show program version and exit')
-argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
-argparser.add_argument('--log-level-info', action='store_true', help=SUPPRESS)
+argparser.add_argument('--verbose', action='store_true', help='print runtime info')
+argparser.add_argument('--version', action='store_true', help='show program version and exit')
 ARGS = argparser.parse_args()
 
 
@@ -91,7 +90,7 @@ if __name__ == '__main__':
         exit(0)
 
     # Stuff that needs root
-    if not cpu.is_root():
+    if not shell.is_root():
         log.log_error('Must be run with root provileges.')
 
     if ARGS.uninstall:
@@ -126,8 +125,8 @@ if __name__ == '__main__':
         print(info.SYSTEM_INFO)
         info.debug_power_info()
 
-    # benchmark
-    if ARGS.benchmark:
+    # Test performance/power characteristics
+    if ARGS.test:
         # Note: still need to add arguments to cli
         info.profile_system([1, 1, 1])
         exit(0)
