@@ -1,5 +1,6 @@
 from glob import glob
 
+import shell
 import config
 
 
@@ -75,3 +76,8 @@ class ProcessReader:
                 return profiles['DEFAULT']
         else:
             return profiles['DEFAULT']
+
+
+def already_running(name: str = 'cpuauto') -> bool:
+    process_instances = shell.shell("grep -sh . /proc/[0-9]*/comm").splitlines().count(name)
+    return process_instances > 1

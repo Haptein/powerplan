@@ -2,13 +2,14 @@
 from sys import exit
 from time import time
 from argparse import ArgumentParser, SUPPRESS
-from psutil import Process
+
+import psutil
 
 import log
 import info
 import shell
+import process
 from config import read_profiles
-from process import ProcessReader
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
@@ -39,10 +40,10 @@ def single_activation(profile):
 
 def main_loop(monitor_mode):
     profiles = read_profiles()
-    process_reader = ProcessReader(profiles)
+    process_reader = process.ProcessReader(profiles)
 
     if ARGS.debug:
-        process = Process()
+        running_process = psutil.Process()
 
     last_profile_name = None
     while True:
@@ -61,7 +62,7 @@ def main_loop(monitor_mode):
         if ARGS.status:
             info.show_system_status(profile, monitor_mode)
         if ARGS.debug:
-            info.debug_runtime_info(process, profile, iteration_start)
+            info.debug_runtime_info(running_process, profile, iteration_start)
 
         if not ARGS.persistent:
             last_profile_name = profile.name
@@ -102,7 +103,7 @@ if __name__ == '__main__':
         exit(0)
 
     # Check if cpuauto is already running
-    if shell.process_already_running():
+    if process.already_running():
         # Monitor mode
         if ARGS.status:
             monitor_mode = True
