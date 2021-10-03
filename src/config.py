@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 import os
 import toml
 from time import time, sleep

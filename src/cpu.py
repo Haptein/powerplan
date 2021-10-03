@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import time
-import psutil
 from pathlib import Path
+
+import psutil
 
 import log
 from shell import shell, is_root, read, path_is_writable
