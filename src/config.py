@@ -16,8 +16,7 @@ def preferred_available(preference, available):
     '''Returns the first element in preference of available'''
     for p in preference:
         if p in available:
-            # return p
-            continue
+            return p
     else:
         log_info(f'Only unknown governors present: {available}. Default will be {available[0]}.')
         return available[0]
