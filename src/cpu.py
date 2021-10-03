@@ -43,7 +43,6 @@ class CPUSpec:
         self.minfreq = read(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int)
         self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
         self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
-        self.policies = read(CPUFREQ_DIR + 'energy_performance_available_preferences').split(' ')
         self.temp_sensor = self._available_temp_sensor()
         self.crit_temp = int(psutil.sensors_temperatures()[self.temp_sensor][0].critical)
         self._set_turbo_variables()
@@ -60,6 +59,9 @@ class CPUSpec:
             self.basefreq = read(CPUFREQ_DIR + 'base_frequency', dtype=int)
             self.min_perf_pct = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
             self.max_perf_pct = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
+            epp_available = Path(CPUFREQ_DIR + 'energy_performance_available_preferences')
+            if epp_available.exists():
+                self.policies = read(epp_available).split(' ')
         else:
             self.driver = 'cpufreq'
             # basefreq is not available for cpufreq afaik
@@ -94,7 +96,7 @@ class CPUSpec:
             return None
 
     def _set_turbo_variables(self):
-        #  turbo_allowed, turbo_file, turbo_inverse
+        '''Sets: turbo_allowed, turbo_file, turbo_inverse'''
         #  https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
         turbo_pstate = Path(CPU_DIR + 'intel_pstate/no_turbo')
         turbo_cpufreq = Path(CPU_DIR + 'cpufreq/boost')
@@ -262,13 +264,17 @@ def set_governor(governor):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
 
 def read_policy(core_id: int = 0) -> str:
-    return read(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
+    if hasattr(CPU, 'policies'):
+        return read(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
+    else:
+        return ''
 
 def set_policy(policy):
-    assert policy in CPU.policies
-    if policy != read_policy():
-        for core_id in list_cores('online'):
-            Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
+    if hasattr(CPU, 'policies'):
+        assert policy in CPU.policies
+        if policy != read_policy():
+            for core_id in list_cores('online'):
+                Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
 
 def read_current_freq() -> dict:
     ''' Returns dict of core_id:cur_freq'''

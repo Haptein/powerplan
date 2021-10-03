@@ -58,8 +58,8 @@ DEFAULT_CONFIG = dict(DEFAULT=dict(
     bat_turbo=False,
     ac_governor=preferred_available(default_ac_governor_preference[CPU.driver], CPU.governors),
     bat_governor=preferred_available(default_bat_governor_preference[CPU.driver], CPU.governors),
-    ac_policy='balance_performance',
-    bat_policy='power',
+    ac_policy='balance_performance' if hasattr(CPU, 'policies') else '',
+    bat_policy='power' if hasattr(CPU, 'policies') else '',
     triggerapps=[]
 ))
 
