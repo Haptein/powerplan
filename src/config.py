@@ -9,9 +9,30 @@ from collections import OrderedDict
 import powersupply
 import cpu
 from cpu import CPU
-from log import log_error, log_warning
+from log import log_error, log_warning, log_info
 
 CONFIG_PATH = '/etc/cpuauto.toml'
+
+def preferred_available(preference, available):
+    '''Returns the first element in preference of available'''
+    for p in preference:
+        if p in available:
+            # return p
+            continue
+    else:
+        log_info(f'Only unknown governors present: {available}. Default will be {available[0]}.')
+        return available[0]
+
+
+default_ac_governor_preference = dict(
+    cpufreq=('schedutil', 'ondemand', 'performance', 'conservative', 'powersave'),
+    intel_pstate=('powersave', 'performance')
+)
+
+default_bat_governor_preference = dict(
+    cpufreq=('schedutil', 'ondemand', 'conservative', 'powersave', 'performance'),
+    intel_pstate=('powersave', 'performance')
+)
 
 DEFAULT_CONFIG = dict(DEFAULT=dict(
     priority=99,
@@ -35,8 +56,8 @@ DEFAULT_CONFIG = dict(DEFAULT=dict(
     bat_tdp_burst=0,
     ac_turbo=True,
     bat_turbo=False,
-    ac_governor='powersave',
-    bat_governor='powersave',
+    ac_governor=preferred_available(default_ac_governor_preference[CPU.driver], CPU.governors),
+    bat_governor=preferred_available(default_bat_governor_preference[CPU.driver], CPU.governors),
     ac_policy='balance_performance',
     bat_policy='power',
     triggerapps=[]

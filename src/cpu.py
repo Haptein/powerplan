@@ -62,6 +62,7 @@ class CPUSpec:
             self.max_perf_pct = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
         else:
             self.driver = 'cpufreq'
+            # basefreq is not available for cpufreq afaik
             self.basefreq = ''
 
     def _thread_siblings(self):
