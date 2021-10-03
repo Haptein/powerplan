@@ -1,11 +1,13 @@
 
 ## Proyect Structure:
+    - config : reading and parsing profile data
+    - cpu : processor configuration interface
     - cpuauto : main file
-    - cpu : processor configuration API
-    - config : reading and parsing of profile data
-    - info : anything that displays or manages cpu config information
-    - log : error and performance logging, basically a placeholder for now
-    
+    - info : anything that displays information
+    - log : logging
+    - powersupply : ac-adapter/battery interface
+    - process : Process reading
+    - shell : shell interface and misc funcs
 
 
 ## TODO
@@ -17,3 +19,5 @@
 ### QoL
 - Look further into optimization
 - Profile editing GUI
+- Split info into status and test (name subject to change)
+- Check dependencies on install
