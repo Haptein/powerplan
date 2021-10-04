@@ -6,6 +6,7 @@ from time import time, sleep
 import powersupply
 import cpu
 from cpu import CPU
+from shell import is_root
 from log import log_error, log_info
 
 CONFIG_PATH = '/etc/cpuauto.conf'
@@ -254,6 +255,9 @@ def read_config():
     return config
 
 def write_default_config():
+    if not is_root():
+        print('Configuration file does not exist.')
+        log_error('Root privileges needed to write configuration file.')
     config = configparser.ConfigParser()
     config['DEFAULT'] = DEFAULT_PROFILE
     with open(CONFIG_PATH, 'w') as file:
