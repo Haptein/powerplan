@@ -206,24 +206,25 @@ class CpuProfile:
                       f'\nAvailable governors: {CPU.governors}')
 
         # Policy available
-        if self.ac_policy not in CPU.policies:
-            log_error(f'Invalid profile "{self.name}": ac_policy "{self.ac_policy}" not in available policies.'
-                      f'\nAvailable policies: {CPU.policies}')
+        if hasattr(CPU, 'policies'):
+            if self.ac_policy not in CPU.policies:
+                log_error(f'Invalid profile "{self.name}": ac_policy "{self.ac_policy}" not in available policies.'
+                          f'\nAvailable policies: {CPU.policies}')
 
-        if self.bat_policy not in CPU.policies:
-            log_error(f'Invalid profile "{self.name}": bat_policy "{self.bat_policy}" not in available policies. '
-                      f'\nAvailable policies: {CPU.policies}')
+            if self.bat_policy not in CPU.policies:
+                log_error(f'Invalid profile "{self.name}": bat_policy "{self.bat_policy}" not in available policies.'
+                          f'\nAvailable policies: {CPU.policies}')
 
-        # Governor - Policy compatibility:
-        if self.ac_governor == 'performance':
-            if self.ac_policy != 'performance':
-                log_error(f'Invalid profile "{self.name}": '
-                          f'ac_governor {self.ac_governor} is incompatible with ac_policy {self.ac_policy}.')
+            # Governor - Policy compatibility:
+            if self.ac_governor == 'performance':
+                if self.ac_policy != 'performance':
+                    log_error(f'Invalid profile "{self.name}": '
+                              f'ac_governor {self.ac_governor} is incompatible with ac_policy {self.ac_policy}.')
 
-        if self.bat_governor == 'performance':
-            if self.bat_policy != 'performance':
-                log_error(f'Invalid profile "{self.name}": '
-                          f'bat_governor {self.bat_governor} is incompatible with bat_policy {self.bat_policy}.')
+            if self.bat_governor == 'performance':
+                if self.bat_policy != 'performance':
+                    log_error(f'Invalid profile "{self.name}": '
+                              f'bat_governor {self.bat_governor} is incompatible with bat_policy {self.bat_policy}.')
 
 
 # Config IO
