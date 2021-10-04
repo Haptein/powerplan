@@ -39,10 +39,10 @@ DEFAULT_PROFILE = dict(
     bat_cores_online=CPU.physical_cores,
     ac_templimit=CPU.crit_temp - 5,
     bat_templimit=CPU.crit_temp - 5,
-    ac_minfreq=CPU.minfreq,
-    ac_maxfreq=CPU.maxfreq,
-    bat_minfreq=CPU.minfreq,
-    bat_maxfreq=int(CPU.minfreq*0.75 + CPU.maxfreq*0.25),
+    ac_minfreq=CPU.minfreq // 1000,
+    ac_maxfreq=CPU.maxfreq // 1000,
+    bat_minfreq=CPU.minfreq // 1000,
+    bat_maxfreq=int(CPU.minfreq*0.6 + CPU.maxfreq*0.4) // 1000,
     ac_minperf=1,
     ac_maxperf=100,
     bat_minperf=1,
@@ -105,6 +105,7 @@ class CpuProfile:
 
         # Value checks
         self._validate()
+        self._set_freqs_to_khz()
 
     def apply(self) -> float:
         ''' Applies profile configuration'''
@@ -141,6 +142,12 @@ class CpuProfile:
 
         sleep(max((0, pollingperiod - time() + iteration_start)))
 
+    def _set_freqs_to_khz(self):
+        self.ac_minfreq *= 1000
+        self.ac_maxfreq *= 1000
+        self.bat_minfreq *= 1000
+        self.bat_maxfreq *= 1000
+
     def _check_value_in_range(self, value_name, value, allowed_range) -> bool:
         minimum, maximum = allowed_range
         if not (minimum <= value and value <= maximum):  # range is limit inclusive
@@ -167,8 +174,8 @@ class CpuProfile:
         self._check_value_in_range('', self.ac_cores_online, [1, CPU.physical_cores])
         self._check_value_in_range('', self.bat_cores_online, [1, CPU.physical_cores])
 
-        # Freq ranges
-        allowed_freq_range = [CPU.minfreq, CPU.maxfreq]
+        # Freq ranges, check them as MHz so errors are not confusing
+        allowed_freq_range = [CPU.minfreq // 1000, CPU.maxfreq // 1000]
         self._check_value_order('ac_minfreq/ac_maxfreq', self.ac_minfreq, self.ac_maxfreq)
         self._check_value_in_range('ac_minfreq', self.ac_minfreq, allowed_freq_range)
         self._check_value_in_range('ac_maxfreq', self.ac_maxfreq, allowed_freq_range)
