@@ -23,8 +23,8 @@ git clone https://github.com/Haptein/cpuauto.git
 cd cpuauto && sudo ./install
 ```
 **Dependencies:**
+- python >= 3.6
 - psutil
-- pytoml
   
 
 ```
@@ -35,21 +35,26 @@ sudo cpuauto --uninstall
 ## Usage
 
 ```
-usage: cpuauto [-h] [-l] [-s] [-p PROFILE] [-r] [-b] [--daemon] [--uninstall] [-v]
+usage: cpuauto.py [-h] [-l] [-p PROFILE] [-r] [-s] [--daemon] [--log]
+                  [--persistent] [--test] [--uninstall] [--verbose]
+                  [--version]
 
 Automatic CPU power configuration control.
 
 optional arguments:
   -h, --help            show this help message and exit
   -l, --list            list profiles and exit
-  -s, --status          display system status periodically
   -p PROFILE, --profile PROFILE
                         activate the specified profile and exit
   -r, --reload          enable config file hot-reloading
-  -b, --benchmark       stresses CPU and records power/performance metrics to a csv file
+  -s, --status          display system status periodically
   --daemon              install and enable cpuauto as a daemon (systemd)
+  --log                 print daemon log
+  --persistent          use this if your profile is reset by your computer
+  --test                stress CPU and record power/performance metrics to a csv file
   --uninstall           uninstall program
-  -v, --version         show program version and exit
+  --verbose             print runtime info
+  --version             show program version and exit
 ```
 
 ### Main modes:
@@ -70,7 +75,7 @@ Enable hot-reloading the configuration file. Usefull for trying out different pr
 
 
 ## Config guide
-The configuration is located in **/etc/cpuauto.toml**. A DEFAULT profile is included and is defined with parameters specific to your machine's CPU. Creating your own profiles (or editing the DEFAULT one) is simple with the [toml](https://github.com/toml-lang/toml#example) format. The parameters:
+The configuration is located at **/etc/cpuauto.conf**. A DEFAULT profile is included and is defined with parameters specific to your machine's CPU. Creating your own profiles (or editing the DEFAULT one) is simple. These are the available parameters:
 
 - **turbo:** Turbo boost/core on or off.
 - **cores_online:** Number of physical cores online.
@@ -87,4 +92,4 @@ intel_pstate only:
 - **tdp_sutained, tdp_burst:** CPU sustained and burst TDP limits (PL1 & PL2) in Watt units.
 
   
-**Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (use ac_ for desktop). It's also not necessary to specify every property for new profiles, the missing ones will get filled in by the DEFAULT profile's values.
+**Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (use ac_ for desktop). It's also not necessary to specify every property for every additional profile, the unspecified ones will get filled in by the DEFAULT profile.
