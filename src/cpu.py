@@ -152,7 +152,7 @@ class RaplLayer:
         # Max energy range correction
         if current_energy < self.last_energy:
             # Energy counter overflowed
-            energy_delta += self.max_energy
+            energy_delta += self.max_energy_range_uj
             log.log_info(f'energy range overflow detected for intel-rapl layer:{self.name}.'
                          f'time delta:{time_delta}, e_i:{current_energy}, e_i-1:{self.last_energy}'
                          f'energy delta:{energy_delta}')
