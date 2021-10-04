@@ -6,7 +6,7 @@ from time import time, sleep
 import powersupply
 import cpu
 from cpu import CPU
-from log import log_error, log_warning, log_info
+from log import log_error, log_info
 
 CONFIG_PATH = '/etc/cpuauto.conf'
 
@@ -62,34 +62,47 @@ DEFAULT_PROFILE = dict(
 
 class CpuProfile:
     def __init__(self, name: str, section: configparser.SectionProxy):
-        i, b = section.getint, section.getboolean
         self.name = name
-        self.priority = i('priority')
-        self.ac_pollingperiod = i('ac_pollingperiod')
-        self.bat_pollingperiod = i('bat_pollingperiod')
-        self.ac_cores_online = i('ac_cores_online')
-        self.bat_cores_online = i('bat_cores_online')
-        self.ac_templimit = i('ac_templimit')
-        self.bat_templimit = i('bat_templimit')
-        self.ac_minfreq = i('ac_minfreq')
-        self.ac_maxfreq = i('ac_maxfreq')
-        self.bat_minfreq = i('bat_minfreq')
-        self.bat_maxfreq = i('bat_maxfreq')
-        self.ac_minperf = i('ac_minperf')
-        self.ac_maxperf = i('ac_maxperf')
-        self.bat_minperf = i('bat_minperf')
-        self.bat_maxperf = i('bat_maxperf')
-        self.ac_tdp_sustained = i('ac_tdp_sustained')
-        self.ac_tdp_burst = i('ac_tdp_burst')
-        self.bat_tdp_sustained = i('bat_tdp_sustained')
-        self.bat_tdp_burst = i('bat_tdp_burst')
-        self.ac_turbo = b('ac_turbo')
-        self.bat_turbo = b('bat_turbo')
         self.ac_governor = section['ac_governor']
         self.bat_governor = section['bat_governor']
         self.ac_policy = section['ac_policy']
         self.bat_policy = section['bat_policy']
         self.triggerapps = [app.strip() for app in section['triggerapps'].split(',') if app]
+        self.has_trigger = bool(self.triggerapps)
+
+        # Type check / error handling
+        i, b = section.getint, section.getboolean
+        method_type_attr = (
+            (i, 'integer', 'priority'),
+            (i, 'integer', 'ac_pollingperiod'),
+            (i, 'integer', 'bat_pollingperiod'),
+            (i, 'integer', 'ac_cores_online'),
+            (i, 'integer', 'bat_cores_online'),
+            (i, 'integer', 'ac_templimit'),
+            (i, 'integer', 'bat_templimit'),
+            (i, 'integer', 'ac_minfreq'),
+            (i, 'integer', 'ac_maxfreq'),
+            (i, 'integer', 'bat_minfreq'),
+            (i, 'integer', 'bat_maxfreq'),
+            (i, 'integer', 'ac_minperf'),
+            (i, 'integer', 'ac_maxperf'),
+            (i, 'integer', 'bat_minperf'),
+            (i, 'integer', 'bat_maxperf'),
+            (i, 'integer', 'ac_tdp_sustained'),
+            (i, 'integer', 'ac_tdp_burst'),
+            (i, 'integer', 'bat_tdp_sustained'),
+            (i, 'integer', 'bat_tdp_burst'),
+            (b, 'boolean', 'ac_turbo'),
+            (b, 'boolean', 'bat_turbo')
+        )
+
+        for (method, type_name, attr) in method_type_attr:
+            try:
+                setattr(self, attr, method(attr))
+            except ValueError:
+                log_error(f'Invalid profile "{self.name}": {attr} must be of {type_name} type.')
+
+        # Value checks
         self._validate()
 
     def apply(self) -> float:
@@ -140,9 +153,8 @@ class CpuProfile:
 
     def _validate(self):
         # Validates profile values
-        self.has_trigger = bool(self.triggerapps)
         if self.name != 'DEFAULT' and not self.has_trigger:
-            log_warning(f'Profile "{self.name}" has no trigger applications configured.')
+            log_info(f'Profile "{self.name}" has no trigger applications configured.')
 
         # Polling period
         for value_name, value in zip(('ac_pollingperiod', 'bat_pollingperiod'),
