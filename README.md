@@ -1,8 +1,8 @@
 # powerplan
 
-Powerplan allows you to switch between CPU power configurations depending on charging state, temperature (wip), specified running processes and the current workload (wip), optimizing battery life and system responsivity. It interacts directly with Kernel userspace tools in order to do so.
+Powerplan allows you to switch between CPU power configurations depending on charging state, temperature (wip), specified running processes and the current workload (wip), optimizing battery life and system responsivity. It interacts directly with the Linux Kernel userspace tools in order to do so.
 
-With powerplan you could for example, have your device automatically target low temperatures (therefore quieter fans) when opening your favourite document reader while on battery, or target maximum performance whenever you run a specific compute intensive program while on AC. Wheather it be for battery savings, quieter runtimes, or maximum performance, the idea is to give you more control over the power usage of your device.
+With powerplan you could for example, have your device automatically target low temperatures (therefore quieter fans) when opening your favourite document reader while on battery, or target maximum performance whenever you run a specific compute intensive program while on AC. Whether it be for battery savings, quieter runtimes, or maximum performance, the idea is to give you more control over the power usage of your device.
 
 While it ships with sensible defaults, in practice, every use case is different. Creating different power profiles (or editing the default one) is pretty simple. These are the main configurable options:
 - Turbo on/off
@@ -15,7 +15,7 @@ While it ships with sensible defaults, in practice, every use case is different.
 - Temperature target (wip)
 - Trigger applications
 
-This software also gives you the tools to understand your specific machine power/temperature characteristics, aiding you in the creation of these profiles (WIP, that's the plan).
+This software also gives you tools to understand your specific machine power/temperature characteristics, aiding you in the creation of these profiles (wip).
 
 ## Installation
 ```
@@ -25,7 +25,7 @@ cd powerplan && sudo ./install
 
 **Dependencies:**
 - python >= 3.6
-- psutil
+- [psutil](https://github.com/giampaolo/psutil)
 
 
 ## Usage
@@ -73,9 +73,9 @@ Enable hot-reloading the configuration file. Usefull for trying out different pr
 ## Config guide
 The configuration is located at **/etc/powerplan.conf**. A DEFAULT profile is included and is defined with parameters specific to your machine's CPU. Creating your own profiles (or editing the DEFAULT one) is simple. These are the available parameters:
 
-- **turbo:** Turbo boost/core on or off.
+- **turbo:** Frequency boost on/off.
 - **cores_online:** Number of physical cores online.
-- **minfreq, maxfreq:** CPU frequency (kHz) range.
+- **minfreq, maxfreq:** CPU frequency (MHz) range.
 - **governor:** Frequency scaling governor.
 - **triggerapps:** List of process names that trigger the profile automatically.
 - **pollingperiod:** Time (ms) between system readings, lower makes it more responsive.
