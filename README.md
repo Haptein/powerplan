@@ -1,36 +1,32 @@
 # powerplan
 
-Actively monitors charging, CPU utilization and temperature to automatically switch between CPU power configurations, optimizing battery life and system responsivity. This software is still WIP, and some functionalities might not yet be implemented. This software interacts directly with Linux kernel userspace tools to change the CPU's configuration.
+Powerplan allows you to switch between CPU power configurations depending on charging state, temperature (wip), specified running processes and the current workload (wip), optimizing battery life and system responsivity. It interacts directly with Kernel userspace tools in order to do so.
 
-While it ships with sensible defaults, in practice, every use case is different. It's easy to create different power profiles (or edit the default one) that switch on and off automatically whenever specified processes are running. You could have a low temperature target profile that switches on whenever you open your preferred pdf viewer or a highly performant profile whenever you run blender, for example.
+With powerplan you could for example, have your device automatically target low temperatures (therefore quieter fans) when opening your favourite document reader while on battery, or target maximum performance whenever you run a specific compute intensive program while on AC. Wheather it be for battery savings, quieter runtimes, or maximum performance, the idea is to give you more control over the power usage of your device.
+
+While it ships with sensible defaults, in practice, every use case is different. Creating different power profiles (or editing the default one) is pretty simple. These are the main configurable options:
+- Turbo on/off
+- Frequency range
+- Online core count
+- Frequency scaling governors
+- Energy performance preference (intel_pstate)
+- TDP limits (intel_pstate)
+- Performance range (intel_pstate)
+- Temperature target (wip)
+- Trigger applications
 
 This software also gives you the tools to understand your specific machine power/temperature characteristics, aiding you in the creation of these profiles (WIP, that's the plan).
 
-These are the configurable options:
-- TDP limits (intel_pstate)
-- Temperature target (Not yet implemented)
-- Online core count
-- Turbo on/off
-- Performance range (intel_pstate)
-- Frequency range
-- Frequency scaling governors
-- Energy performance preference
-
-## How to
+## Installation
 ```
-# install
 git clone https://github.com/Haptein/powerplan.git
 cd powerplan && sudo ./install
 ```
+
 **Dependencies:**
 - python >= 3.6
 - psutil
-  
 
-```
-# uninstall
-sudo powerplan --uninstall
-```
 
 ## Usage
 
@@ -81,15 +77,17 @@ The configuration is located at **/etc/powerplan.conf**. A DEFAULT profile is in
 - **cores_online:** Number of physical cores online.
 - **minfreq, maxfreq:** CPU frequency (kHz) range.
 - **governor:** Frequency scaling governor.
-- **policy:** Energy performance preference.
 - **triggerapps:** List of process names that trigger the profile automatically.
 - **pollingperiod:** Time (ms) between system readings, lower makes it more responsive.
 - **priority:** If several profiles are triggered, the one with the lower value gets selected.
 - **templimit:** Temperature target (not yet implemented).
 
 intel_pstate only:
+- **policy:** Energy performance preference.
 - **minperf, maxfreq:** Performance percent range (recommended instead of minfreq/maxfreq).
 - **tdp_sutained, tdp_burst:** CPU sustained and burst TDP limits (PL1 & PL2) in Watt units.
 
   
 **Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (use ac_ for desktop). It's also not necessary to specify every property for every additional profile, the unspecified ones will get filled in by the DEFAULT profile.
+
+The DEFAULT profile is needed, and it will be created together with /etc/poweprlan.conf if the config file doesn't exist.
