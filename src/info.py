@@ -149,7 +149,20 @@ def fudgel(n):
     while True:
         _ = eval('"Help me! I can\'t stop D="')
 
-def profile_system(threads: list = [1], T=0.5, step_time=5, step_freq=100_000, resting_temp=46):
+def work(iters):
+    for i in range(iters):
+        _ = eval('"Expensive computation"')
+
+def stress(usage: float, iters=10000):
+    assert 0 < usage <= 1
+    sleep_factor = 1/usage - 1
+    while True:
+        t0 = time()
+        work(iters)
+        sleep((time()-t0)*sleep_factor)
+
+
+def profile_system(threads: list = [1], T=0.5, step_time=8, step_freq=100_000, resting_temp=46):
     # Setup
     print(f'Power Plan: {cpu.read_governor()} {cpu.read_policy()}\n')
     # Print tdp limits maybe
@@ -236,7 +249,6 @@ def bench_freqs(freqs: list, n_iter: int, output='output.txt'):
 
 if __name__ == '__main__':
     debug_power_info()
-    exit()
-    # profile_system(threads=[1, 3, 6, 12])
-    freqs = range(int(CPU.minfreq/1000), int(CPU.maxfreq/1000), 200)
-    bench_freqs(freqs, 20_000_000)
+    profile_system(threads=[12, 6, 4, 2, 1])
+    #freqs = range(int(CPU.minfreq/1000), int(CPU.maxfreq/1000), 200)
+    #bench_freqs(freqs, 20_000_000)
