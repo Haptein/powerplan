@@ -76,3 +76,4 @@ ipython_config.py
 
 # TOML files
 .toml
+.vscode/*
