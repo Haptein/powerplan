@@ -1,12 +1,12 @@
 [Unit]
-Description=cpuauto service
+Description=powerplan service
 After=multi-user.target
 
 [Service]
 User=root
 Restart=no
 Type=simple
-ExecStart=/usr/bin/cpuauto --verbose
+ExecStart=/usr/bin/powerplan --verbose
 StandardOutput=journal
 StandardError=journal
 

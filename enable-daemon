@@ -1,11 +1,11 @@
 #!/usr/bin/bash
 ps1=`ps --no-headers -o comm 1`
 if [ "$ps1" == "systemd" ];then
-    cp /opt/cpuauto/cpuauto.service /etc/systemd/system/
+    cp /opt/powerplan/powerplan.service /etc/systemd/system/
     systemctl daemon-reload
-    systemctl enable cpuauto
-    systemctl start cpuauto
+    systemctl enable powerplan
+    systemctl start powerplan
     echo "Done."
 else
-    echo "cpuauto\'s daemon needs Systemd."
+    echo "powerplan\'s daemon needs Systemd."
 fi

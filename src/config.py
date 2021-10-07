@@ -9,7 +9,7 @@ from cpu import CPU
 from shell import is_root
 from log import log_error, log_info
 
-CONFIG_PATH = '/etc/cpuauto.conf'
+CONFIG_PATH = '/etc/powerplan.conf'
 
 def preferred_available(preference, available):
     '''Returns the first element in preference of available'''
@@ -61,7 +61,7 @@ DEFAULT_PROFILE = dict(
 )
 
 
-class CpuProfile:
+class PowerProfile:
     def __init__(self, name: str, section: configparser.SectionProxy):
         self.name = name
         self.ac_governor = section['ac_governor']
@@ -272,9 +272,9 @@ def write_default_config():
         config.write(file)
 
 def read_profiles():
-    '''returns a dict of CpuProfile objects, sorted by ascending priority'''
+    '''returns a dict of PowerProfile objects, sorted by ascending priority'''
     config = read_config()
-    profiles = {key: CpuProfile(key, config[key]) for key in config}
+    profiles = {key: PowerProfile(key, config[key]) for key in config}
     # Sort and return
     sorted_names = sorted(profiles, key=lambda name: profiles[name].priority)
     return {name: profiles[name] for name in sorted_names}

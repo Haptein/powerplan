@@ -17,7 +17,7 @@ argparser.add_argument('-l', '--list', action='store_true', help='list profiles 
 argparser.add_argument('-p', '--profile', default='', help='activate the specified profile and exit')
 argparser.add_argument('-r', '--reload', action='store_true', help='enable config file hot-reloading')
 argparser.add_argument('-s', '--status', action='store_true', help="display system status periodically")
-argparser.add_argument('--daemon', action='store_true', help='install and enable cpuauto as a daemon (systemd)')
+argparser.add_argument('--daemon', action='store_true', help='install and enable as a system daemon (systemd)')
 argparser.add_argument('--log', action='store_true', help='print daemon log')
 argparser.add_argument('--persistent', action='store_true', help='use this if your profile is reset by your computer')
 argparser.add_argument('--test', action='store_true', help='stress CPU and record power/performance metrics to a csv file')
@@ -102,7 +102,7 @@ if __name__ == '__main__':
         shell.enable_daemon()
         exit(0)
 
-    # Check if cpuauto is already running
+    # Check if already running
     if process.already_running():
         # Monitor mode
         if ARGS.status:
@@ -111,8 +111,8 @@ if __name__ == '__main__':
             # Profile will be overriden
             log.log_warning('Single profile activation will get overwritten by the already running instance.')
         else:
-            log.log_error('An instance of cpuauto is already running. '
-                          'You can still monitor system status with: cpuauto --status.')
+            log.log_error('An instance is already running. '
+                          'You can monitor system status with: powerplan --status.')
     else:
         monitor_mode = False
 

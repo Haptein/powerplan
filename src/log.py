@@ -21,7 +21,7 @@ def log_info(message):
 
 def print_log():
     # If daemon installed
-    if Path('/etc/systemd/system/cpuauto.service').exists():
-        print(shell.shell('journalctl -u cpuauto.service'))
+    if Path('/etc/systemd/system/powerplan.service').exists():
+        print(shell.shell('journalctl -u powerplan.service'))
     else:
-        log_error("cpuauto.service is not installed. Run 'cpuauto --daemon' to install daemon (systemd).")
+        log_error("powerplan.service is not installed. Run 'powerplan --daemon' to install daemon (systemd).")

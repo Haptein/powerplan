@@ -1,4 +1,4 @@
-# cpuauto
+# powerplan
 
 Actively monitors charging, CPU utilization and temperature to automatically switch between CPU power configurations, optimizing battery life and system responsivity. This software is still WIP, and some functionalities might not yet be implemented. This software interacts directly with Linux kernel userspace tools to change the CPU's configuration.
 
@@ -19,8 +19,8 @@ These are the configurable options:
 ## How to
 ```
 # install
-git clone https://github.com/Haptein/cpuauto.git
-cd cpuauto && sudo ./install
+git clone https://github.com/Haptein/powerplan.git
+cd powerplan && sudo ./install
 ```
 **Dependencies:**
 - python >= 3.6
@@ -29,13 +29,13 @@ cd cpuauto && sudo ./install
 
 ```
 # uninstall
-sudo cpuauto --uninstall
+sudo powerplan --uninstall
 ```
 
 ## Usage
 
 ```
-usage: cpuauto.py [-h] [-l] [-p PROFILE] [-r] [-s] [--daemon] [--log]
+usage: powerplan.py [-h] [-l] [-p PROFILE] [-r] [-s] [--daemon] [--log]
                   [--persistent] [--test] [--uninstall] [--verbose]
                   [--version]
 
@@ -48,7 +48,7 @@ optional arguments:
                         activate the specified profile and exit
   -r, --reload          enable config file hot-reloading
   -s, --status          display system status periodically
-  --daemon              install and enable cpuauto as a daemon (systemd)
+  --daemon              install and enable as a daemon (systemd)
   --log                 print daemon log
   --persistent          use this if your profile is reset by your computer
   --test                stress CPU and record power/performance metrics to a csv file
@@ -59,13 +59,13 @@ optional arguments:
 
 ### Main modes:
 **default mode:**
-cpuauto will periodically monitor cpu temps, runnining processes, and charging state to switch between the  profiles specified in /etc/cpuauto.toml.
+powerplan will periodically monitor cpu temps, runnining processes, and charging state to switch between the  profiles specified in /etc/powerplan.toml.
 
 **--daemon:**
-cpuauto will install and enable itself as a systemd daemon. It runs exactly as if no arguments were provided, at boot time.
+powerplan will install and enable itself as a systemd daemon. It runs exactly as if no arguments were provided, at boot time.
 
 **--status**
-cpuauto displays system configuration periodically. It will also apply such configurations (active mode) unless an instance of cpuauto is already running (monitor mode).
+powerplan displays system configuration periodically. It will also apply such configurations (active mode) unless an instance of powerplan is already running (monitor mode).
 
 **--profile**
 Single profile activation mode. Useful if you'd rather define profiles and switch between them manually.
@@ -75,7 +75,7 @@ Enable hot-reloading the configuration file. Usefull for trying out different pr
 
 
 ## Config guide
-The configuration is located at **/etc/cpuauto.conf**. A DEFAULT profile is included and is defined with parameters specific to your machine's CPU. Creating your own profiles (or editing the DEFAULT one) is simple. These are the available parameters:
+The configuration is located at **/etc/powerplan.conf**. A DEFAULT profile is included and is defined with parameters specific to your machine's CPU. Creating your own profiles (or editing the DEFAULT one) is simple. These are the available parameters:
 
 - **turbo:** Turbo boost/core on or off.
 - **cores_online:** Number of physical cores online.

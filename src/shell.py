@@ -24,8 +24,8 @@ def path_is_writable(path) -> bool:
         return True
 
 def uninstall():
-    shell('/opt/cpuauto/uninstall')
+    shell('/opt/powerplan/uninstall')
     print('SEE YOU SPACE COWBOY...')
 
 def enable_daemon():
-    shell('/opt/cpuauto/enable-daemon')
+    shell('/opt/powerplan/enable-daemon')

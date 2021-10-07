@@ -20,7 +20,7 @@ VERSION = '0.6'
 SYSTEM_INFO = f'''
     System
     OS:\t\t\t{platform.platform()}
-    cpuauto:\t\t{VERSION} running on Python{platform.python_version()}
+    powerplan:\t\t{VERSION} running on Python{platform.python_version()}
     CPU model:\t\t{CPU.name}
     Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}\
     {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU.thread_siblings])}
@@ -92,9 +92,9 @@ def read_process_cpu_mem(running_process):
     return running_process.cpu_percent(), running_process.memory_percent()
 
 def debug_runtime_info(process, profile, iteration_start):
-    cpuauto_util, cpuauto_mem = read_process_cpu_mem(process)
+    process_util, process_mem = read_process_cpu_mem(process)
     time_iter = (time() - iteration_start) * 1000  # ms
-    print(f'Process resources: CPU {cpuauto_util:.2f}%, Memory {cpuauto_mem:.2f}%, Time {time_iter:.3f}ms')
+    print(f'Process resources: CPU {process_util:.2f}%, Memory {process_mem:.2f}%, Time {time_iter:.3f}ms')
 
 # CPU power / performance profiling
 

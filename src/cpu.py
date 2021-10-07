@@ -92,7 +92,7 @@ class CPUSpec:
             msg = ("Couldn't detect a known CPU temperature sensor."
                    f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
                    f"\n\tDetected sensors were: {temperature_sensors}"
-                   "\n\tPlease open an issue at https://www.github.org/haptein/cpuauto")
+                   "\n\tPlease open an issue at https://www.github.org/haptein/powerplan")
             log.log_warning(msg)
             return None
 

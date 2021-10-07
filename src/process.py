@@ -62,22 +62,22 @@ class ProcessReader:
             triggerapps.update([p[:15] for p in profiles[profile_name].triggerapps])
         return triggerapps
 
-    def triggered_profile(self, profiles) -> config.CpuProfile:
-        '''Returns triggered CpuProfile object according to running processes'''
+    def triggered_profile(self, profiles) -> config.PowerProfile:
+        '''Returns triggered PowerProfile object according to running processes'''
         # Check running processes
         if self.triggerapps:
             self.update()
 
             # check profile trigger apps against procs
-            for cpuprofile in profiles.values():
-                if cpuprofile.triggerapp_present(self.triggerapps_found):
-                    return cpuprofile
+            for profile in profiles.values():
+                if profile.triggerapp_present(self.triggerapps_found):
+                    return profile
             else:
                 return profiles['DEFAULT']
         else:
             return profiles['DEFAULT']
 
 
-def already_running(name: str = 'cpuauto') -> bool:
+def already_running(name: str = 'powerplan') -> bool:
     process_instances = shell.shell("grep -sh . /proc/[0-9]*/comm").splitlines().count(name)
     return process_instances > 1

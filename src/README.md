@@ -2,7 +2,7 @@
 ## Proyect Structure:
     - config : reading and parsing profile data
     - cpu : processor configuration interface
-    - cpuauto : main file
+    - powerplan : main file
     - info : anything that displays information
     - log : logging
     - powersupply : ac-adapter/battery interface

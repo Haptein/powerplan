@@ -1,14 +1,14 @@
 #!/usr/bin/bash
-mkdir /opt/cpuauto/
-mkdir /opt/cpuauto/src/
-cp -r src/*.py /opt/cpuauto/src/
-cp uninstall /opt/cpuauto/
-cp enable-daemon /opt/cpuauto/
-cp cpuauto.service /opt/cpuauto/
-cp LICENSE /opt/cpuauto/LICENSE
-ln -s /opt/cpuauto/src/cpuauto.py /usr/bin/cpuauto
-chmod 755 /opt/cpuauto/src/cpuauto.py
-chmod 755 /opt/cpuauto/uninstall
-chmod 755 /usr/bin/cpuauto
-chmod 744 /opt/cpuauto/enable-daemon
-chmod 644 /opt/cpuauto/cpuauto.service
+mkdir /opt/powerplan/
+mkdir /opt/powerplan/src/
+cp -r src/*.py /opt/powerplan/src/
+cp uninstall /opt/powerplan/
+cp enable-daemon /opt/powerplan/
+cp powerplan.service /opt/powerplan/
+cp LICENSE /opt/powerplan/LICENSE
+ln -s /opt/powerplan/src/powerplan.py /usr/bin/powerplan
+chmod 755 /opt/powerplan/src/powerplan.py
+chmod 755 /opt/powerplan/uninstall
+chmod 755 /usr/bin/powerplan
+chmod 744 /opt/powerplan/enable-daemon
+chmod 644 /opt/powerplan/powerplan.service
