@@ -6,8 +6,8 @@ from argparse import ArgumentParser, SUPPRESS
 import psutil
 
 import log
-import info
 import shell
+import status
 import process
 from config import read_profiles
 
@@ -20,7 +20,6 @@ argparser.add_argument('-s', '--status', action='store_true', help="display syst
 argparser.add_argument('--daemon', action='store_true', help='install and enable as a system daemon (systemd)')
 argparser.add_argument('--log', action='store_true', help='print daemon log')
 argparser.add_argument('--persistent', action='store_true', help='use this if your profile is reset by your computer')
-argparser.add_argument('--test', action='store_true', help='stress CPU and record power/performance metrics to a csv file')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('--verbose', action='store_true', help='print runtime info')
 argparser.add_argument('--version', action='store_true', help='show program version and exit')
@@ -32,7 +31,7 @@ def single_activation(profile):
     if profile in profiles:
         profiles[ARGS.profile].apply()
         if ARGS.status:
-            info.show_system_status(profiles[ARGS.profile], monitor_mode=True)
+            status.show_system_status(profiles[ARGS.profile], monitor_mode=True)
         else:
             print(f'Profile {profile} active.')
     else:
@@ -60,9 +59,9 @@ def main_loop(monitor_mode):
 
         # Everything else
         if ARGS.status:
-            info.show_system_status(profile, monitor_mode)
+            status.show_system_status(profile, monitor_mode)
         if ARGS.debug:
-            info.debug_runtime_info(running_process, profile, iteration_start)
+            status.debug_runtime_info(running_process, profile, iteration_start)
 
         if not ARGS.persistent:
             last_profile_name = profile.name
@@ -83,7 +82,7 @@ if __name__ == '__main__':
 
     # Version
     if ARGS.version:
-        print(info.VERSION)
+        status.print_version()
         exit(0)
 
     if ARGS.log:
@@ -123,14 +122,8 @@ if __name__ == '__main__':
 
     # Debug info
     if ARGS.debug:
-        print(info.SYSTEM_INFO)
-        info.debug_power_info()
-
-    # Test performance/power characteristics
-    if ARGS.test:
-        # Note: still need to add arguments to cli
-        info.profile_system([1, 1, 1])
-        exit(0)
+        print(status.SYSTEM_INFO)
+        status.debug_power_info()
 
     try:
         main_loop(monitor_mode)
