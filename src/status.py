@@ -1,5 +1,6 @@
 import platform
 import subprocess
+from time import time
 from datetime import datetime
 
 import psutil
@@ -10,6 +11,8 @@ from cpu import CPU, RAPL
 from __init__ import __version__
 
 # Information display
+
+TEMP_SENSORS = ', '.join(list(psutil.sensors_temperatures()))
 
 SYSTEM_INFO = f'''
     System
@@ -23,10 +26,12 @@ SYSTEM_INFO = f'''
     Turbo:\t\t{CPU.turbo_path}
     Governors:\t\t{', '.join(CPU.governors)}
     Policies:\t\t{', '.join(CPU.policies)}
+    Temperature:\t{TEMP_SENSORS}
     AC adapter:\t\t{powersupply.AC.parent.name}
     Battery:\t\t{powersupply.BAT.parent.name}
     Power method:\t{powersupply.POWER_READING_METHOD}
 '''
+
 
 def show_system_status(profile, monitor_mode=False):
     '''Prints System status during runtime'''
@@ -90,6 +95,7 @@ def debug_runtime_info(process, profile, iteration_start):
     process_util, process_mem = read_process_cpu_mem(process)
     time_iter = (time() - iteration_start) * 1000  # ms
     print(f'Process resources: CPU {process_util:.2f}%, Memory {process_mem:.2f}%, Time {time_iter:.3f}ms')
+
 
 if __name__ == '__main__':
     debug_power_info()

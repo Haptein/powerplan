@@ -20,6 +20,7 @@ argparser.add_argument('-s', '--status', action='store_true', help="display syst
 argparser.add_argument('--daemon', action='store_true', help='install and enable as a system daemon (systemd)')
 argparser.add_argument('--log', action='store_true', help='print daemon log')
 argparser.add_argument('--persistent', action='store_true', help='use this if your profile is reset by your computer')
+argparser.add_argument('--system', action='store_true', help='show system info and exit')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('--verbose', action='store_true', help='print runtime info')
 argparser.add_argument('--version', action='store_true', help='show program version and exit')
@@ -89,6 +90,10 @@ if __name__ == '__main__':
         log.print_log()
         exit(0)
 
+    if ARGS.system:
+        print(status.SYSTEM_INFO)
+        exit(0)
+
     # Stuff that needs root
     if not shell.is_root():
         log.log_error('Must be run with root provileges.')
@@ -122,7 +127,6 @@ if __name__ == '__main__':
 
     # Debug info
     if ARGS.debug:
-        print(status.SYSTEM_INFO)
         status.debug_power_info()
 
     try:
