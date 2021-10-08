@@ -10,23 +10,19 @@ import powersupply
 from cpu import CPU, RAPL
 from __init__ import __version__
 
-# Information display
-
-TEMP_SENSORS = ', '.join(list(psutil.sensors_temperatures()))
 
 SYSTEM_INFO = f'''
     System
     OS:\t\t\t{platform.platform()}
     powerplan:\t\t{__version__} running on Python{platform.python_version()} with psutil{psutil.__version__}
     CPU model:\t\t{CPU.name}
-    Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}\
-    {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU.thread_siblings])}
-    Frequency range:\t{" - ".join([str(freq) for freq in (CPU.minfreq, CPU.basefreq, CPU.maxfreq) if freq])} KHz
+    Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}  {CPU.sibling_cores_repr}
+    Frequency range:\t{CPU.freq_range_repr}
     Driver:\t\t{CPU.driver}
     Turbo:\t\t{CPU.turbo_path}
     Governors:\t\t{', '.join(CPU.governors)}
     Policies:\t\t{', '.join(CPU.policies)}
-    Temperature:\t{TEMP_SENSORS}
+    Temperature:\t{CPU.temp_sensor_repr}
     AC adapter:\t\t{powersupply.AC.parent.name}
     Battery:\t\t{powersupply.BAT.parent.name}
     Power method:\t{powersupply.POWER_READING_METHOD}

@@ -22,8 +22,8 @@ SYSTEM_DIR = '/sys/devices/system/'
 CPU_DIR = SYSTEM_DIR + 'cpu/'
 CPUFREQ_DIR = CPU_DIR + 'cpu0/cpufreq/'
 
-# the order in this list embodies priority
-ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz']
+# the order in this list embodies lookup priority
+ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz', 'thinkpad']
 
 
 class CPUSpec:
@@ -79,6 +79,19 @@ class CPUSpec:
             self.driver = 'cpufreq'
             # basefreq is not available for cpufreq afaik
             self.basefreq = ''
+
+        # Lastly generate some system info strings
+        self.sibling_cores_repr = ' '.join([f"{sib[0]}-{sib[1]}" for sib in self.thread_siblings])
+
+        temp_sensor_list = list(psutil.sensors_temperatures())
+        if self.temp_sensor:
+            # Mark used temp sensor with an *
+            used_sensor = temp_sensor_list.index(self.temp_sensor)
+            temp_sensor_list[used_sensor] = '*' + temp_sensor_list[used_sensor]
+        self.temp_sensor_repr = ', '.join(temp_sensor_list)
+
+        freqs = [str(freq) for freq in (self.minfreq, self.basefreq, self.maxfreq) if freq]
+        self.freq_range_repr = " - ".join(freqs)
 
     def _thread_siblings(self):
         # Physical core / Thread sibling detection#set_cores_online()
