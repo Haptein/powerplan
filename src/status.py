@@ -17,7 +17,7 @@ TEMP_SENSORS = ', '.join(list(psutil.sensors_temperatures()))
 SYSTEM_INFO = f'''
     System
     OS:\t\t\t{platform.platform()}
-    powerplan:\t\t{__version__} running on Python{platform.python_version()}
+    powerplan:\t\t{__version__} running on Python{platform.python_version()} with psutil{psutil.__version__}
     CPU model:\t\t{CPU.name}
     Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}\
     {' '.join([f"{sib[0]}-{sib[1]}" for sib in CPU.thread_siblings])}
