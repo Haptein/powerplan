@@ -31,9 +31,9 @@ cd powerplan && sudo ./install
 ## Usage
 
 ```
-usage: powerplan.py [-h] [-l] [-p PROFILE] [-r] [-s] [--daemon] [--log]
-                  [--persistent] [--test] [--uninstall] [--verbose]
-                  [--version]
+usage: powerplan [-h] [-l] [-p PROFILE] [-r] [-s] [--daemon] [--log]
+                 [--persistent] [--system] [--uninstall] [--verbose]
+                 [--version]
 
 Automatic CPU power configuration control.
 
@@ -44,10 +44,10 @@ optional arguments:
                         activate the specified profile and exit
   -r, --reload          enable config file hot-reloading
   -s, --status          display system status periodically
-  --daemon              install and enable as a daemon (systemd)
+  --daemon              install and enable as a system daemon (systemd)
   --log                 print daemon log
   --persistent          use this if your profile is reset by your computer
-  --test                stress CPU and record power/performance metrics to a csv file
+  --system              show system info and exit
   --uninstall           uninstall program
   --verbose             print runtime info
   --version             show program version and exit
