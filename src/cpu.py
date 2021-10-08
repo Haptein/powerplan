@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import sys
 import time
 from pathlib import Path
 
@@ -29,17 +30,28 @@ class CPUSpec:
     ''' Stores all static CPU attributes and paths (that vary between models and drivers) '''
 
     def __init__(self):
-        if list_cores('present') != list_cores('online'):
-            if is_root:
-                set_all_cores_online()
-            else:
-                log.log_warning('')
+        # Check and warn if there are offline cores (when without root privilege and --system argument)
+        cores_offline = list_cores('offline')
+        if cores_offline:
+            log.log_info('Offline cores detected: ' + read(CPU_DIR + 'offline'))
+            if is_root():
+                log.log_info('Setting all cores online to enable correct topology detection.')
+                set_core_status(list_cores('present'), online=1)
+            elif '--system' in sys.argv:
+                log.log_warning("CPU topology can't be correctly read (without root privileges)"
+                                ', since there are offline cores.')
+
         # Model
         self.name = shell('grep "model name" /proc/cpuinfo').split(':')[-1].strip()
         # Topology
         self.thread_siblings = self._thread_siblings()
         self.physical_cores = len(self.thread_siblings)
         self.logical_cores = len(list_cores())
+        # Reset core status
+        if cores_offline and is_root():
+            log.log_info('Setting cores back to initial offline status.')
+            set_core_status(cores_offline, online=0)
+
         # Limits
         self.minfreq = read(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int)
         self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
@@ -326,12 +338,14 @@ def set_turbo_state(turbo_state: bool):
     if CPU.turbo_allowed and (turbo_state != read_turbo_state()):
         CPU.turbo_path.write_text(str(int(turbo_state ^ CPU.turbo_inverse)))
 
-def set_all_cores_online():
+def set_core_status(core_list: list, online: int):
     # Needed to initialize CPU properly
-    for core_id in list_cores('present'):
+    assert online in [0, 1]
+    online = str(online)
+    for core_id in core_list:
         core_id_online_path = Path(CPU_DIR + f'cpu{core_id}/online')
         if core_id_online_path.exists():
-            core_id_online_path.write_text('1')
+            core_id_online_path.write_text(online)
 
 def read_physical_core_status(core_num: int) -> bool:
     assert 0 <= core_num and core_num <= CPU.physical_cores - 1
