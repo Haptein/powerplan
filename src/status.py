@@ -51,7 +51,7 @@ def show_system_status(profile, monitor_mode=False):
     freqs = '\t'.join([str(freq) for freq in freq_list])
 
     # CPU average line
-    cpu_cores_turbo = '\t'.join([f'Cores online: {num_cores_online}',
+    cpu_cores_turbo = '\t'.join([f'Cores online: {num_cores_online} ',
                                  f"Turbo: {'enabled' if cpu.read_turbo_state() else 'disabled'}"])
 
     cpu_avg = '\t'.join([f"Avg. Usage: {cpu.read_cpu_utilization('avg')}%",
