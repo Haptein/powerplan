@@ -31,7 +31,7 @@ ARGS = argparser.parse_args()
 def single_activation(profile):
     profiles = read_profiles()
     if profile in profiles:
-        profiles[ARGS.profile].apply()
+        profiles[ARGS.profile].apply(powersupply.charging())
         if ARGS.status:
             status.show_system_status(profiles[ARGS.profile], monitor_mode=True)
         else:

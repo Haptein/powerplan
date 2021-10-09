@@ -107,9 +107,9 @@ class PowerProfile:
         self._validate()
         self._set_freqs_to_khz()
 
-    def apply(self) -> float:
+    def apply(self, charging) -> float:
         ''' Applies profile configuration'''
-        if powersupply.charging():
+        if charging:
             cpu.set_physical_cores_online(self.ac_cores_online)
             cpu.set_freq_range(self.ac_minfreq, self.ac_maxfreq)
             cpu.set_perf_range(self.ac_minperf, self.ac_maxperf)
