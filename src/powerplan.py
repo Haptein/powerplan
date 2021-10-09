@@ -9,6 +9,7 @@ import log
 import shell
 import status
 import process
+import powersupply
 from config import read_profiles
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
@@ -45,7 +46,9 @@ def main_loop(monitor_mode):
     if ARGS.debug:
         running_process = psutil.Process()
 
+    # Variables used if no --persistent flag is used
     last_profile_name = None
+    last_charging_state = None
     while True:
         iteration_start = time()
 
@@ -53,10 +56,21 @@ def main_loop(monitor_mode):
             profiles = read_profiles()
             process_reader.reset(profiles)
 
-        # Get profile and apply
+        # Get profile and charging state
         profile = process_reader.triggered_profile(profiles)
-        if not monitor_mode and profile.name != last_profile_name:
-            profile.apply()
+        charging_state = powersupply.charging()
+
+        # Profile application
+        if not monitor_mode:
+            if ARGS.persistent:
+                profile.apply(charging_state)
+
+            # If profile or charging state changed:
+            if (profile.name != last_profile_name) or (charging_state != last_charging_state):
+                # Log only on changes, even if --persistent is used (to avoid flooding journal)
+                log.log_info(f'Applying profile: {profile.name}-{"AC" if charging_state else "Battery"}')
+                if not ARGS.persistent:
+                    profile.apply(charging_state)
 
         # Everything else
         if ARGS.status:
@@ -64,8 +78,9 @@ def main_loop(monitor_mode):
         if ARGS.debug:
             status.debug_runtime_info(running_process, profile, iteration_start)
 
-        if not ARGS.persistent:
-            last_profile_name = profile.name
+        # Update last state
+        last_profile_name = profile.name
+        last_charging_state = charging_state
 
         # Then sleep needed time
         profile.sleep(iteration_start=iteration_start)
