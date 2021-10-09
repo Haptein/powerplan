@@ -119,7 +119,8 @@ POWER_READING_METHOD = power_reading_method(BAT)
 if AC:
     log.log_info(f'AC-adapter detected: {AC.parent.name}')
 if BAT:
-    log.log_info(f'Battery detected: {BAT.parent.name}, power_reading_method: {POWER_READING_METHOD}')
+    log.log_info(f'Battery detected: {BAT.parent.name}')
+    log.log_info(f'Battery power reading method: {POWER_READING_METHOD}')
 
 if __name__ == '__main__':
     print(tree())
