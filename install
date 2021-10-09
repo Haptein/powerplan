@@ -1,4 +1,8 @@
 #!/usr/bin/bash
+# uninstall first if installation detected
+[ -d "/opt/powerplan/" ] && ./uninstall
+
+# Proceed with normal installation
 mkdir /opt/powerplan/
 mkdir /opt/powerplan/src/
 cp -r src/*.py /opt/powerplan/src/
