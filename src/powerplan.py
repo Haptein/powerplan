@@ -74,7 +74,7 @@ def main_loop(monitor_mode):
 
         # Everything else
         if ARGS.status:
-            status.show_system_status(profile, monitor_mode)
+            status.show_system_status(profile, monitor_mode, charging_state)
         if ARGS.debug:
             status.debug_runtime_info(running_process, profile, iteration_start)
 
@@ -83,7 +83,7 @@ def main_loop(monitor_mode):
         last_charging_state = charging_state
 
         # Then sleep needed time
-        profile.sleep(iteration_start=iteration_start)
+        profile.sleep(iteration_start=iteration_start, charging_state=charging_state)
 
 
 if __name__ == '__main__':

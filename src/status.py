@@ -29,13 +29,15 @@ SYSTEM_INFO = f'''
 '''
 
 
-def show_system_status(profile, monitor_mode=False):
+def show_system_status(profile, monitor_mode=False, charging=None):
     '''Prints System status during runtime'''
+    if charging is None:
+        charging = powersupply.charging()
 
     time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
     active_profile = f'{time_now}\t\tActive: {profile.name}'
     power_plan = f'Power plan: {cpu.read_governor()}/{cpu.read_policy()}'
-    power_status = f'Charging: {powersupply.charging()}\t\tBattery draw: {powersupply.power_draw():.1f}W'
+    power_status = f'Charging: {charging}\t\tBattery draw: {powersupply.power_draw():.1f}W'
     if RAPL.enabled:
         power_status += f'\tPackage: {RAPL.read_power():.2f}W'
 

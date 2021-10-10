@@ -1,3 +1,4 @@
+import errno
 from glob import glob
 from pathlib import Path
 
@@ -104,9 +105,14 @@ def power_draw():
             return read(CURRENT_NOW, int) * read(VOLTAGE_NOW, int) / 10**12
         else:
             return -1
-    except OSError:
-        log.log_warning(f'Unresponsive sysfs when reading battery power draw with method: {POWER_READING_METHOD}.')
-        return -1
+    except OSError as err:
+        if err.errno is errno.ENODEV:
+            # https://github.com/torvalds/linux/blob/master/drivers/acpi/battery.c#L200
+            # Kernel raises ENODEV when acpi battery values are unkown
+            log.log_warning(f'Kernel: ACPI_BATTERY_VALUE_UNKNOWN with method {POWER_READING_METHOD}.')
+            return -1
+        else:
+            raise
 
 def tree() -> str:
     return shell('grep . /sys/class/power_supply/*/* -d skip')
