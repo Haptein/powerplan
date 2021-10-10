@@ -97,11 +97,15 @@ def power_reading_method(bat_device_path=None):
 
 def power_draw():
     '''Returns battery power draw in Watt units'''
-    if POWER_READING_METHOD == 'power':
-        return read(POWER_NOW, int) / 10**6
-    elif POWER_READING_METHOD == 'current_and_voltage':
-        return read(CURRENT_NOW, int) * read(VOLTAGE_NOW, int) / 10**12
-    else:
+    try:
+        if POWER_READING_METHOD == 'power':
+            return read(POWER_NOW, int) / 10**6
+        elif POWER_READING_METHOD == 'current_and_voltage':
+            return read(CURRENT_NOW, int) * read(VOLTAGE_NOW, int) / 10**12
+        else:
+            return -1
+    except OSError:
+        log.log_warning(f'Unresponsive sysfs when reading battery power draw with method: {POWER_READING_METHOD}.')
         return -1
 
 def tree() -> str:
