@@ -13,8 +13,14 @@
 ## TODO
 
 ### Core Function
+- Status Object (wip)
 - System profiling (wip)
 - Temperature control system (researching...)
+- Check that power_supply interfaces don't raise ENODEV on power_method
+- Implement power draw methods:
+    - energy_tracking: energy_now {mWh}
+    - charge_tracking: charge_now (mAh) * voltage_now
+- Enforce persistent flag on --reload
 
 ### QoL
 - Look further into optimization
