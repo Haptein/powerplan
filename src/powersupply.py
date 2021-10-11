@@ -98,7 +98,6 @@ def power_reading_method(bat_device_path=None):
 
 def power_draw():
     '''Returns battery power draw in Watt units'''
-    return None
     try:
         if POWER_READING_METHOD == 'power':
             return read(POWER_NOW, int) / 10**6

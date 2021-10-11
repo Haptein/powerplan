@@ -27,6 +27,8 @@ argparser.add_argument('--verbose', action='store_true', help='print runtime inf
 argparser.add_argument('--version', action='store_true', help='show program version and exit')
 ARGS = argparser.parse_args()
 
+# --reload forces --persistent
+ARGS.persistent = ARGS.persistent or ARGS.reload
 
 def single_activation(profile):
     profiles = read_profiles()
