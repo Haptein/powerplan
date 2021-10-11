@@ -98,19 +98,20 @@ def power_reading_method(bat_device_path=None):
 
 def power_draw():
     '''Returns battery power draw in Watt units'''
+    return None
     try:
         if POWER_READING_METHOD == 'power':
             return read(POWER_NOW, int) / 10**6
         elif POWER_READING_METHOD == 'current_and_voltage':
             return read(CURRENT_NOW, int) * read(VOLTAGE_NOW, int) / 10**12
         else:
-            return -1
+            return None
     except OSError as err:
         if err.errno is errno.ENODEV:
             # https://github.com/torvalds/linux/blob/master/drivers/acpi/battery.c#L200
             # Kernel raises ENODEV when acpi battery values are unkown
             log.log_warning(f'Kernel: ACPI_BATTERY_VALUE_UNKNOWN with method {POWER_READING_METHOD}.')
-            return -1
+            return None
         else:
             raise
 
