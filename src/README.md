@@ -22,6 +22,7 @@
         - energy_tracking: energy_now {mWh}
         - charge_tracking: charge_now (mAh) * voltage_now
 - Add UPS as powersupply
+- Add support for amd-pstate (after it lands in mainline)
 
 ### QoL
 - Profile editing GUI

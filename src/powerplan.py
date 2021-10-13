@@ -30,10 +30,10 @@ ARGS = argparser.parse_args()
 # --reload forces --persistent
 ARGS.persistent = ARGS.persistent or ARGS.reload
 
-def single_activation(profile):
+def single_activation(profile: str):
     profiles = read_profiles()
     if profile in profiles:
-        profiles[ARGS.profile].apply(powersupply.charging())
+        profiles[profile].apply(powersupply.charging())
         if ARGS.status:
             status.show_system_status(profiles[ARGS.profile], monitor_mode=True)
         else:
@@ -41,7 +41,7 @@ def single_activation(profile):
     else:
         log.log_error(f'Profile "{ARGS.profile}" not found in config file.')
 
-def main_loop(monitor_mode):
+def main_loop(monitor_mode: bool):
     profiles = read_profiles()
     process_reader = process.ProcessReader(profiles)
 

@@ -126,7 +126,7 @@ class CPUSpec:
         #  https://www.kernel.org/doc/Documentation/cpu-freq/boost.txt
         turbo_pstate = Path(CPU_DIR + 'intel_pstate/no_turbo')
         turbo_cpufreq = Path(CPU_DIR + 'cpufreq/boost')
-        turbo_amd_legacy = Path(SYSTEM_DIR + 'cpu0/cpufreq/cpb')
+        turbo_amd_legacy = Path(CPUFREQ_DIR + 'cpb')
 
         if turbo_pstate.exists():
             turbo_path = turbo_pstate
@@ -213,16 +213,16 @@ class IntelRapl:
             self.layers[layer.name] = layer
 
     def read_power(self, name: str = 'package-0'):
-        if self.enabled:
+        if self.enabled and name in self.layers:
             return self.layers[name].read_power()
         else:
-            return -1
+            return None
 
 def get_rapl():
     ''' Returns an instance of appropriate Rapl Class'''
     #  if CPU.driver == 'intel_pstate':
     return IntelRapl()
-    #  elif CPU.driver == 'amd_driver_with_rapl_implementation':
+    #  elif CPU.driver == 'amd_pstate':
     #      return AMDRapl()
 
 # CPU STATUS
