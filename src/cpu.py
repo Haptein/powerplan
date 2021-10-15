@@ -81,7 +81,10 @@ class CPUSpec:
             self.basefreq = ''
 
         # Lastly generate some system info strings
-        self.sibling_cores_repr = ' '.join([f"{sib[0]}-{sib[1]}" for sib in self.thread_siblings])
+        sibling_group_list = []
+        for sibling_group in self.thread_siblings:
+            sibling_group_list.append('-'.join(map(str, sibling_group)))
+        self.sibling_cores_repr = ' '.join(sibling_group_list)
 
         temp_sensor_list = list(psutil.sensors_temperatures())
         if self.temp_sensor:
@@ -93,7 +96,7 @@ class CPUSpec:
         freqs = [str(freq) for freq in (self.minfreq, self.basefreq, self.maxfreq) if freq]
         self.freq_range_repr = " - ".join(freqs)
 
-    def _thread_siblings(self):
+    def _thread_siblings(self) -> list:
         # Physical core / Thread sibling detection#set_cores_online()
         siblings_set = set()
         # Read thread_siblings_list for each virtual cpu
