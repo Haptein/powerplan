@@ -23,20 +23,26 @@ SYSTEM_INFO = f'''
     Governors:\t\t{', '.join(CPU.governors)}
     Policies:\t\t{', '.join(CPU.policies)}
     Temperature:\t{CPU.temp_sensor_repr}
-    AC adapter:\t\t{powersupply.AC.parent.name}
-    Battery:\t\t{powersupply.BAT.parent.name}
-    Power method:\t{powersupply.POWER_READING_METHOD}
+    AC adapter:\t\t{powersupply.AC.name}
+    Battery:\t\t{powersupply.BAT.name}
+    Power method:\t{powersupply.BAT.selected_power_method}
 '''
 
 
-def show_system_status(profile, monitor_mode=False, charging=None):
+def show_system_status(profile, monitor_mode=False, ac_power=None):
     '''Prints System status during runtime'''
-    if charging is None:
-        charging = powersupply.charging()
-    power_source = 'AC'+' '*5 if charging else 'Battery'
+    if ac_power is None:
+        ac_power = powersupply.ac_power()
+    power_source = 'AC'+' '*5 if ac_power else 'Battery'
 
-    power_draw = powersupply.power_draw()
-    power_draw_repr = 'N/A ' if power_draw is None else f'{power_draw:.1f}W'
+    if ac_power:
+        power_draw_repr = 'N/A '
+    else:
+        power_draw = powersupply.power_draw()
+        if power_draw is None:
+            power_draw_repr = 'N/A '
+        else:
+            power_draw_repr = f'{power_draw:.1f}W'
 
     time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
     active_profile = f'{time_now}\t\tActive: {profile.name}'

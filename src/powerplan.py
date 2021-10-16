@@ -33,7 +33,7 @@ ARGS.persistent = ARGS.persistent or ARGS.reload
 def single_activation(profile: str):
     profiles = read_profiles()
     if profile in profiles:
-        profiles[profile].apply(powersupply.charging())
+        profiles[profile].apply(powersupply.ac_power())
         if ARGS.status:
             status.show_system_status(profiles[ARGS.profile], monitor_mode=True)
         else:
@@ -60,7 +60,7 @@ def main_loop(monitor_mode: bool):
 
         # Get profile and charging state
         profile = process_reader.triggered_profile(profiles)
-        charging_state = powersupply.charging()
+        charging_state = powersupply.ac_power()
 
         # Profile application
         if not monitor_mode:
@@ -85,7 +85,7 @@ def main_loop(monitor_mode: bool):
         last_charging_state = charging_state
 
         # Then sleep needed time
-        profile.sleep(iteration_start=iteration_start, charging_state=charging_state)
+        profile.sleep(iteration_start=iteration_start, ac_power=charging_state)
 
 
 if __name__ == '__main__':

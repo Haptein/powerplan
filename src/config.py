@@ -107,9 +107,9 @@ class PowerProfile:
         self._validate()
         self._set_freqs_to_khz()
 
-    def apply(self, charging):
+    def apply(self, ac_power):
         ''' Applies profile configuration'''
-        if charging:
+        if ac_power:
             cpu.set_physical_cores_online(self.ac_cores_online)
             cpu.set_freq_range(self.ac_minfreq, self.ac_maxfreq)
             cpu.set_perf_range(self.ac_minperf, self.ac_maxperf)
@@ -132,10 +132,10 @@ class PowerProfile:
                 return True
         return False
 
-    def sleep(self, iteration_start, charging_state=None):
-        if charging_state is None:
-            charging_state = powersupply.charging()
-        if charging_state:
+    def sleep(self, iteration_start, ac_power=None):
+        if ac_power is None:
+            ac_power = powersupply.ac_power()
+        if ac_power:
             pollingperiod = self.ac_pollingperiod / 1000
         else:
             pollingperiod = self.bat_pollingperiod / 1000
