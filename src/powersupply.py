@@ -118,7 +118,7 @@ class Battery(PowerSupply):
     def __init__(self, path):
         super().__init__(path)
         self.available_methods = self._available_power_methods()
-        # set self.power_draw method
+        # set power_draw:callable and selected_power_method:name
         self._set_power_draw_method()
 
     def _present_supplying_power(self):
@@ -127,7 +127,7 @@ class Battery(PowerSupply):
             status = self._read(self.status, str)
             if status == 'Discharging':
                 return True
-            elif status in ['Charging', 'Not charging', 'Full']:
+            elif status == 'Charging':
                 return False
             else:
                 return None
@@ -267,44 +267,17 @@ def power_supply_detection() -> tuple:
     return ACAdapter(ac_path), Battery(bat_path)
 
 
-def charging() -> bool:
-    ''' Is battery charging? Deals with unavailable bat OR ac-adapter info.'''
-
-    if AC is not None:
-        # AC adapter states: 0, 1, unknown
-        ac_data = AC.read_text()
-        if '1' in ac_data:
-            # at least one online ac adapter
-            return True
-        elif '0' in ac_data:
-            # at least one offline ac adapter
-            ac_state = False
-        else:
-            # Unknown ac state
-            ac_state = None
+def ac_power() -> bool:
+    '''
+    Is system AC_powered/charging?
+    Deals with unavailable Battery/ACAdapter
+    '''
+    ac_supplying = AC.supplying_power()
+    bat_supplying = BAT.supplying_power()
+    if ac_supplying is not None:
+        return ac_supplying
     else:
-        ac_state = None
-
-    if BAT is not None:
-        # Possible values: "Unknown", "Charging", "Discharging", "Not charging", "Full"
-        battery_data = BAT.read_text()
-        if "Discharging" in battery_data:
-            battery_state = False
-        elif "Charging" in battery_data:
-            return True
-        else:
-            battery_state = None
-    else:
-        battery_state = None
-
-    # At this point both ac and bat state can only be False or None
-    if False in [ac_state, battery_state]:
-        return False
-    else:
-        # both ac-adapter and battery states are unknown charging == True
-        # Desktop computers should fall in this case
-        return True
-
+        return not bat_supplying
 
 def tree() -> str:
     return shell('grep . /sys/class/power_supply/*/* -d skip')
