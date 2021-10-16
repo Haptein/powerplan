@@ -23,6 +23,7 @@
         - charge_tracking: charge_now (mAh) * voltage_now
 - Add UPS as powersupply
 - Add support for amd-pstate (after it lands in mainline)
+- Selectively display powersupply names in status.SYSTEM_INFO
 
 ### QoL
 - Profile editing GUI

@@ -120,9 +120,11 @@ def tree() -> str:
 
 #  Globals
 AC, BAT = power_supply_detection()
-CURRENT_NOW = BAT.with_name('current_now')
-VOLTAGE_NOW = BAT.with_name('voltage_now')
-POWER_NOW = BAT.with_name('power_now')
+
+if BAT:
+    CURRENT_NOW = BAT.with_name('current_now')
+    VOLTAGE_NOW = BAT.with_name('voltage_now')
+    POWER_NOW = BAT.with_name('power_now')
 POWER_READING_METHOD = power_reading_method(BAT)
 
 # Log

@@ -10,6 +10,15 @@ import powersupply
 from cpu import CPU, RAPL
 from __init__ import __version__
 
+if powersupply.AC:
+    AC_name = powersupply.AC.parent.name
+else:
+    AC_name = None
+
+if powersupply.BAT:
+    BAT_name = powersupply.BAT.parent.name
+else:
+    BAT_name = None
 
 SYSTEM_INFO = f'''
     System
@@ -23,8 +32,8 @@ SYSTEM_INFO = f'''
     Governors:\t\t{', '.join(CPU.governors)}
     Policies:\t\t{', '.join(CPU.policies)}
     Temperature:\t{CPU.temp_sensor_repr}
-    AC adapter:\t\t{powersupply.AC.parent.name}
-    Battery:\t\t{powersupply.BAT.parent.name}
+    AC adapter:\t\t{AC_name}
+    Battery:\t\t{BAT_name}
     Power method:\t{powersupply.POWER_READING_METHOD}
 '''
 
