@@ -44,11 +44,11 @@ class PowerSupply(ABC):
         if self.present:
             self._set_paths()
         self._set_supplying_power_method()
-        self.ENODEV_flag = False
+        self.flagged_enodev = set()
 
     @abstractmethod
     def _set_paths(self):
-        '''Sets up needed sysfs interfaces'''
+        '''Sets up needed sysfs interfaces on init'''
         pass
 
     @abstractmethod
@@ -59,13 +59,13 @@ class PowerSupply(ABC):
         return None
 
     def _set_supplying_power_method(self):
-        '''Sets suppliying_power method, indended to run after subclass's __init__'''
+        '''Sets supplying_power method on init'''
         if self.present:
             self.supplying_power = self._present_supplying_power
         else:
             self.supplying_power = self._absent_supplying_power
 
-    def _read(self, path, dtype=int):
+    def _read(self, path: Path, dtype=int):
         '''
         Reads data from path and parses as dtype
         Returns None if OS raises ENODEV (errno 19)
@@ -76,10 +76,11 @@ class PowerSupply(ABC):
             if err.errno is errno.ENODEV:
                 # https://github.com/torvalds/linux/blob/master/drivers/acpi/battery.c#L200
                 # Kernel raises ENODEV when acpi battery values are unkown
-                if not self.ENODEV_flag:
+                path_str = path.as_posix()
+                if path_str not in self.flagged_enodev:
                     # Only warn once to avoid flooding logs
-                    self.ENODEV_flag = True
-                    log.log_warning(f'Kernel: ACPI_BATTERY_VALUE_UNKNOWN when reading {path}.')
+                    self.flagged_enodev.add(path_str)
+                    log.log_warning(f'Kernel: ACPI_BATTERY_VALUE_UNKNOWN when reading {path_str}.')
                 return None
             else:
                 raise
