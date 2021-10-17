@@ -25,7 +25,6 @@ SYSTEM_INFO = f'''
     Temperature:\t{CPU.temp_sensor_repr}
     AC adapter:\t\t{powersupply.AC.name}
     Battery:\t\t{powersupply.BAT.name}
-    Power method:\t{powersupply.BAT.selected_power_method}
 '''
 
 
