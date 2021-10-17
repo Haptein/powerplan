@@ -39,12 +39,14 @@ class PowerSupply(ABC):
     def __init__(self, path: Path = None):
         '''path: device's dir Path'''
         self.path = path
-        self.name = path.name
         self.present = path is not None
         if self.present:
+            self.name = path.name
             self._set_paths()
+            self.flagged_enodev = set()
+        else:
+            self.name = None
         self._set_supplying_power_method()
-        self.flagged_enodev = set()
 
     @abstractmethod
     def _set_paths(self):
@@ -117,7 +119,10 @@ class ACAdapter(PowerSupply):
 class Battery(PowerSupply):
     def __init__(self, path):
         super().__init__(path)
-        self.available_methods = self._available_power_methods()
+        if self.present:
+            self.available_methods = self._available_power_methods()
+        else:
+            self.available_methods = dict()
         # set power_draw:callable and selected_power_method:name
         self._set_power_draw_method()
 
@@ -155,6 +160,7 @@ class Battery(PowerSupply):
     def _available_power_methods(self) -> dict:
         '''Returns dict of available power draw estimation name:callable'''
         available_methods = dict()
+        # Ordered by the amount of sysfs reads needed (and if history needed secondarily)
         if self._available(self.power_now):
             available_methods['DirectRead'] = self._power_read
         if self._available(self.energy_now):
@@ -170,8 +176,17 @@ class Battery(PowerSupply):
 
     def _set_power_draw_method(self, method: str = None, history_len: int = 5):
         '''Sets power_draw method to the one specified'''
+        # if no available power draw
+        if not self.present or not self.available_methods:
+            self.power_draw = self._power_unavailable
+            self.selected_power_method = None
+            log.log_info('No battery power draw methods available.')
+            return
+        # battery present and method(s) available
         if method is None:
+            # Default to the first one
             method = list(self.available_methods)[0]
+        # Set method
         self.power_draw = self.available_methods[method]
         self.selected_power_method = method
         log.log_info(f'Power method selected: {method}')
@@ -182,6 +197,9 @@ class Battery(PowerSupply):
         elif method == 'ChargeDeltaVoltage':
             self.time_history = History(maxlen=history_len)
             self.charge_history = History(maxlen=history_len)
+
+    def _power_unavailable(self):
+        return None
 
     def _power_read(self):
         power = self._read(self.power_now, int)  # µW

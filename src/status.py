@@ -10,15 +10,6 @@ import powersupply
 from cpu import CPU, RAPL
 from __init__ import __version__
 
-if powersupply.AC:
-    AC_name = powersupply.AC.parent.name
-else:
-    AC_name = None
-
-if powersupply.BAT:
-    BAT_name = powersupply.BAT.parent.name
-else:
-    BAT_name = None
 
 SYSTEM_INFO = f'''
     System
@@ -43,15 +34,11 @@ def show_system_status(profile, monitor_mode=False, ac_power=None):
     if ac_power is None:
         ac_power = powersupply.ac_power()
     power_source = 'AC'+' '*5 if ac_power else 'Battery'
-
-    if ac_power:
+    power_draw = powersupply.BAT.power_draw()
+    if (ac_power or power_draw is None):
         power_draw_repr = 'N/A '
     else:
-        power_draw = powersupply.power_draw()
-        if power_draw is None:
-            power_draw_repr = 'N/A '
-        else:
-            power_draw_repr = f'{power_draw:.1f}W'
+        power_draw_repr = f'{power_draw:.1f}W'
 
     time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
     active_profile = f'{time_now}\t\tActive: {profile.name}'
