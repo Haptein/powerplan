@@ -10,22 +10,22 @@ import powersupply
 from cpu import CPU, RAPL
 from __init__ import __version__
 
-
-SYSTEM_INFO = f'''
-    System
-    OS:\t\t\t{platform.platform()}
-    powerplan:\t\t{__version__} running on Python{platform.python_version()} with psutil{psutil.__version__}
-    CPU model:\t\t{CPU.name}
-    Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}  {CPU.sibling_cores_repr}
-    Frequency range:\t{CPU.freq_range_repr}
-    Driver:\t\t{CPU.driver}
-    Turbo:\t\t{CPU.turbo_path}
-    Governors:\t\t{', '.join(CPU.governors)}
-    Policies:\t\t{', '.join(CPU.policies)}
-    Temperature:\t{CPU.temp_sensor_repr}
-    AC adapter:\t\t{powersupply.AC.name}
-    Battery:\t\t{powersupply.BAT.name}
-'''
+# Variable string, None's will get filtered out
+SYSTEM_INFO = ('\n'+' '*4).join(filter(None, (
+    ' '*4+'System',
+    f'OS:\t\t\t{platform.platform()}',
+    f'powerplan:\t\t{__version__} running on Python{platform.python_version()} with psutil{psutil.__version__}',
+    f'CPU model:\t\t{CPU.name}',
+    f'Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}  {CPU.sibling_cores_repr}',
+    f'Frequency range:\t{CPU.freq_range_repr}',
+    f'Driver:\t\t{CPU.driver}',
+    f'Turbo:\t\t{CPU.turbo_path}',
+    f'Governors:\t\t{CPU.governors_repr}',
+    f'Policies:\t\t{CPU.policies_repr}' if CPU.policies else None,
+    f'Temperature:\t{CPU.temp_sensor_repr}',
+    f'AC adapter:\t\t{powersupply.AC.name}' if powersupply.AC.name else None,
+    f'Battery:\t\t{powersupply.BAT.name}' if powersupply.BAT.name else None
+)))
 
 
 def show_system_status(profile, monitor_mode=False, ac_power=None):
@@ -41,7 +41,12 @@ def show_system_status(profile, monitor_mode=False, ac_power=None):
 
     time_now = datetime.now().strftime('%H:%M:%S.%f')[:-3]
     active_profile = f'{time_now}\t\tActive: {profile.name}'
-    power_plan = f'Power plan: {cpu.read_governor()}/{cpu.read_policy()}'
+
+    # governor/policy
+    governor = cpu.read_governor()
+    policy = '/'+cpu.read_policy() if CPU.policies else ''
+    power_plan = f'Power plan: {governor+policy}'
+
     power_status = f'Power source: {power_source}\tBattery draw: {power_draw_repr}'
     if RAPL.enabled:
         power_status += f'\tPackage: {RAPL.read_power():.2f}W'
