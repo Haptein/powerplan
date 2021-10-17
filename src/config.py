@@ -55,8 +55,8 @@ DEFAULT_PROFILE = dict(
     bat_turbo=False,
     ac_governor=preferred_available(default_ac_governor_preference[CPU.driver], CPU.governors),
     bat_governor=preferred_available(default_bat_governor_preference[CPU.driver], CPU.governors),
-    ac_policy='balance_performance' if hasattr(CPU, 'policies') else '',
-    bat_policy='power' if hasattr(CPU, 'policies') else '',
+    ac_policy='balance_performance' if CPU.policies else '',
+    bat_policy='power' if CPU.policies else '',
     triggerapps=''
 )
 
@@ -206,7 +206,7 @@ class PowerProfile:
                       f'\nAvailable governors: {CPU.governors}')
 
         # Policy available
-        if hasattr(CPU, 'policies'):
+        if CPU.policies:
             if self.ac_policy not in CPU.policies:
                 log_error(f'Invalid profile "{self.name}": ac_policy "{self.ac_policy}" not in available policies.'
                           f'\nAvailable policies: {CPU.policies}')

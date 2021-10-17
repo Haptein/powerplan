@@ -55,10 +55,17 @@ class CPUSpec:
         # Limits
         self.minfreq = read(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int)
         self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
-        self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
         self.temp_sensor = self._available_temp_sensor()
         self.crit_temp = int(psutil.sensors_temperatures()[self.temp_sensor][0].critical)
         self._set_turbo_variables()
+
+        # governors / policies
+        self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
+        epp_available = Path(CPUFREQ_DIR + 'energy_performance_available_preferences')
+        if epp_available.exists():
+            self.policies = read(epp_available).split(' ')
+        else:
+            self.policies = ''
 
         '''
         Scaling driver
@@ -72,20 +79,20 @@ class CPUSpec:
             self.basefreq = read(CPUFREQ_DIR + 'base_frequency', dtype=int)
             self.min_perf_pct = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
             self.max_perf_pct = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
-            epp_available = Path(CPUFREQ_DIR + 'energy_performance_available_preferences')
-            if epp_available.exists():
-                self.policies = read(epp_available).split(' ')
+            # he goes stuff unavailable with intel-pstate
         else:
             self.driver = 'cpufreq'
-            # basefreq is not available for cpufreq afaik
+            # stuff unavailable in cpufreq drivers
             self.basefreq = ''
 
         # Lastly generate some system info strings
+        # sibling_cores_repr
         sibling_group_list = []
         for sibling_group in self.thread_siblings:
             sibling_group_list.append('-'.join(map(str, sibling_group)))
         self.sibling_cores_repr = ' '.join(sibling_group_list)
 
+        # temp_sensor_repr
         temp_sensor_list = list(psutil.sensors_temperatures())
         if self.temp_sensor:
             # Mark used temp sensor with an *
@@ -93,8 +100,16 @@ class CPUSpec:
             temp_sensor_list[used_sensor] = '*' + temp_sensor_list[used_sensor]
         self.temp_sensor_repr = ', '.join(temp_sensor_list)
 
+        # freq_range_repr
         freqs = [str(freq) for freq in (self.minfreq, self.basefreq, self.maxfreq) if freq]
         self.freq_range_repr = " - ".join(freqs)
+
+        # governors_repr, policies_repr
+        self.governors_repr = ", ".join(self.governors)
+        self.policies_repr = ', '.join(self.policies)
+        log.log_info(f'Available governors: {self.governors_repr}')
+        if self.policies:
+            log.log_info(f'Available policies: {self.policies_repr}')
 
     def _thread_siblings(self) -> list:
         # Physical core / Thread sibling detection#set_cores_online()
@@ -293,13 +308,13 @@ def set_governor(governor):
             Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
 
 def read_policy(core_id: int = 0) -> str:
-    if hasattr(CPU, 'policies'):
+    if CPU.policies:
         return read(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
     else:
         return ''
 
 def set_policy(policy):
-    if hasattr(CPU, 'policies'):
+    if CPU.policies:
         assert policy in CPU.policies
         if policy != read_policy():
             for core_id in list_cores('online'):
