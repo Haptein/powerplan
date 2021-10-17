@@ -160,19 +160,17 @@ class Battery(PowerSupply):
     def _available_power_methods(self) -> dict:
         '''Returns dict of available power draw estimation name:callable'''
         available_methods = dict()
-        # Ordered by the amount of sysfs reads needed (and if history needed secondarily)
+        # ordered by responsivity then by number of reads to sysfs
         if self._available(self.power_now):
             available_methods['DirectRead'] = self._power_read
+        if self._available(self.voltage_now) and self._available(self.current_now):
+            available_methods['CurrentVoltage'] = self._power_current_voltage
         if self._available(self.energy_now):
             available_methods['EnergyDelta'] = self._power_energy_delta
-        if self._available(self.voltage_now):
-            if self._available(self.current_now):
-                available_methods['CurrentVoltage'] = self._power_current_voltage
-            if self._available(self.charge_now):
-                available_methods['ChargeDeltaVoltage'] = self._power_charge_delta_voltage
+        if self._available(self.voltage_now) and self._available(self.charge_now):
+            available_methods['ChargeDeltaVoltage'] = self._power_charge_delta_voltage
 
-        available_methods_repr = ', '.join(available_methods)
-        log.log_info(f'Available power method(s): {available_methods_repr}')
+        log.log_info(f'Available power method(s): {", ".join(available_methods)}')
         return available_methods
 
     def _set_power_draw_method(self, method: str = None, history_len: int = 5):
