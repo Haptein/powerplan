@@ -171,7 +171,8 @@ class Battery(PowerSupply):
             if self._available(self.charge_now):
                 available_methods['ChargeDeltaVoltage'] = self._power_charge_delta_voltage
 
-        log.log_info(f'Available power method(s): {available_methods}')
+        available_methods_repr = ', '.join(available_methods)
+        log.log_info(f'Available power method(s): {available_methods_repr}')
         return available_methods
 
     def _set_power_draw_method(self, method: str = None, history_len: int = 5):
