@@ -179,7 +179,8 @@ class Battery(PowerSupply):
         if not self.present or not self.available_methods:
             self.power_draw = self._power_unavailable
             self.selected_power_method = None
-            log.log_info('No battery power draw methods available.')
+            if self.present:
+                log.log_info('No battery power draw methods available.')
             return
         # battery present and method(s) available
         if method is None:
