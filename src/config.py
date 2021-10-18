@@ -7,7 +7,7 @@ import powersupply
 import cpu
 from cpu import CPU
 from shell import is_root
-from log import log_error, log_info
+from log import log_error, log_warning, log_info
 
 CONFIG_PATH = '/etc/powerplan.conf'
 
@@ -226,6 +226,11 @@ class PowerProfile:
                     log_error(f'Invalid profile "{self.name}": '
                               f'bat_governor {self.bat_governor} is incompatible with bat_policy {self.bat_policy}.')
 
+        # Warn if policy key but no policies available
+        if self.ac_policy and not CPU.policies:
+            log_warning(f'ac_policy present in profile "{self.name}" but CPU does not support policies.')
+        if self.bat_policy and not CPU.policies:
+            log_warning(f'bat_policy present in profile "{self.name}" but CPU does not support policies.')
 
 # Config IO
 

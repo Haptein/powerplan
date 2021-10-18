@@ -65,7 +65,7 @@ class CPUSpec:
         if epp_available.exists():
             self.policies = read(epp_available).split(' ')
         else:
-            self.policies = ''
+            self.policies = []
 
         '''
         Scaling driver
