@@ -218,13 +218,14 @@ class IntelRapl:
         '''If exists and enabled, create RaplLayer objs for each layer found.'''
         enabled_path = Path('/sys/class/powercap/intel-rapl/enabled')
         if enabled_path.exists() and is_root():
-            log.log_info('IntelRapl is enabled.')
             self.enabled = read(enabled_path, bool)
         else:
-            log.log_info('IntelRapl is disabled.')
             self.enabled = False
 
-        if not self.enabled:
+        if self.enabled:
+            log.log_info('IntelRapl is enabled.')
+        else:
+            log.log_info('IntelRapl is unavailable.')
             return
 
         # If reached this point rapl exists and is enabled
@@ -242,9 +243,10 @@ class IntelRapl:
 
 def get_rapl():
     ''' Returns an instance of appropriate Rapl Class'''
-    #  if CPU.driver == 'intel_pstate':
+    # a more generic rapl interface might be needed if AMD enables one
+    # if Path('/sys/class/powercap/intel-rapl/enabled').exists():
     return IntelRapl()
-    #  elif CPU.driver == 'amd_pstate':
+    #  elif amd_pstate's path exists:
     #      return AMDRapl()
 
 # CPU STATUS
@@ -417,7 +419,7 @@ def set_tdp_limits(PL1: int, PL2: int):
     If PL1 or PL2 is zero, this does nothing.
     '''
     assert PL1 <= PL2
-    if CPU.driver == 'intel_pstate' and RAPL.enabled and PL1 and PL2:
+    if RAPL.enabled and PL1 and PL2:
         PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
         PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
         if PL1_path.exists() and PL2_path.exists():

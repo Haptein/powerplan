@@ -16,15 +16,11 @@
 - Status history, SystemStatus Object (wip)
 - System Efficiency modeling (wip, researching...)
 - Temperature control system (researching...)
-- Implement powersupply devices as classes, needed for the following:
-    - Remember kernel raising ENODEV for each power_method (warn only once, change power_method)
-    - Implement power draw methods:
-        - energy_tracking: energy_now {mWh}
-        - charge_tracking: charge_now (mAh) * voltage_now
+- change battery power_method if active one fails (?)
 - Add UPS as powersupply
 - Add support for amd-pstate (after it lands in mainline)
-- Selectively display powersupply names in status.SYSTEM_INFO
 
 ### QoL
 - Profile editing GUI
 - Check dependencies on install
+- Reuse History object in IntelLayer.power_read

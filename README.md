@@ -10,7 +10,7 @@ While it ships with sensible defaults, in practice, every use case is different.
 - Online core count
 - Frequency scaling governors
 - Energy performance preference (intel_pstate)
-- TDP limits (intel_pstate)
+- TDP limits (intel CPUs)
 - Performance range (intel_pstate)
 - Temperature target (wip)
 - Trigger applications
@@ -81,12 +81,11 @@ The configuration is located at **/etc/powerplan.conf**. A DEFAULT profile is in
 - **pollingperiod:** Time (ms) between system readings, lower makes it more responsive.
 - **priority:** If several profiles are triggered, the one with the lower value gets selected.
 - **templimit:** Temperature target (not yet implemented).
+- **tdp_sutained, tdp_burst:** CPU sustained and burst TDP limits (PL1 & PL2) in Watt units, intel only.
 
-intel_pstate only:
+intel_pstate driver only:
 - **policy:** Energy performance preference.
 - **minperf, maxfreq:** Performance percent range (recommended instead of minfreq/maxfreq).
-- **tdp_sutained, tdp_burst:** CPU sustained and burst TDP limits (PL1 & PL2) in Watt units.
-
   
 **Important:** these options must be pre-fixed with either **ac_** or **bat_** to determine the charging situation in which the values should be set (use ac_ for desktop). It's also not necessary to specify every property for every additional profile, the unspecified ones will get filled in by the DEFAULT profile.
 
