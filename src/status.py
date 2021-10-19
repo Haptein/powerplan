@@ -18,7 +18,7 @@ SYSTEM_INFO = ('\n'+' '*4).join(filter(None, (
     f'CPU model:\t\t{CPU.name}',
     f'Core configuraton:\t{CPU.physical_cores}/{CPU.logical_cores}  {CPU.sibling_cores_repr}',
     f'Frequency range:\t{CPU.freq_range_repr}',
-    f'Driver:\t\t{CPU.driver}',
+    f'Driver:\t\t{CPU.driver_repr}',
     f'Turbo:\t\t{CPU.turbo_path}',
     f'Governors:\t\t{CPU.governors_repr}',
     f'Policies:\t\t{CPU.policies_repr}' if CPU.policies else None,

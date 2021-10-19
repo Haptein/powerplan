@@ -86,6 +86,10 @@ class CPUSpec:
             self.basefreq = ''
 
         # Lastly generate some system info strings
+
+        # all cpufreq drivers are treated the same, driver_repr differentiates them in logs/status
+        self.driver_repr = driver
+
         # sibling_cores_repr
         sibling_group_list = []
         for sibling_group in self.thread_siblings:
