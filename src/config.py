@@ -4,10 +4,10 @@ import configparser
 from time import time, sleep
 
 import powersupply
+import log
 import cpu
 from cpu import CPU
 from shell import is_root
-from log import log_error, log_warning, log_info
 
 CONFIG_PATH = '/etc/powerplan.conf'
 
@@ -17,7 +17,7 @@ def preferred_available(preference, available):
         if p in available:
             return p
     else:
-        log_info(f'Only unknown governors present: {available}. Default will be {available[0]}.')
+        log.info(f'Only unknown governors present: {available}. Default will be {available[0]}.')
         return available[0]
 
 
@@ -101,7 +101,7 @@ class PowerProfile:
             try:
                 setattr(self, attr, method(attr))
             except ValueError:
-                log_error(f'Invalid profile "{self.name}": {attr} must be of {type_name} type.')
+                log.error(f'Invalid profile "{self.name}": {attr} must be of {type_name} type.')
 
         # Value checks
         self._validate()
@@ -151,24 +151,24 @@ class PowerProfile:
     def _check_value_in_range(self, value_name, value, allowed_range) -> bool:
         minimum, maximum = allowed_range
         if not (minimum <= value and value <= maximum):  # range is limit inclusive
-            log_error(f'Invalid profile "{self.name}": {value_name} is outside allowed range. '
+            log.error(f'Invalid profile "{self.name}": {value_name} is outside allowed range. '
                       f'Allowed range for this value is: {allowed_range}.')
 
     def _check_value_order(self, range_name, minimum, maximum):
         if minimum > maximum:
-            log_error(f'Invalid profile "{self.name}": range {range_name} is invalid. '
+            log.error(f'Invalid profile "{self.name}": range {range_name} is invalid. '
                       'Maximum must be greater than or equal to minimum.')
 
     def _validate(self):
         # Validates profile values
         if self.name != 'DEFAULT' and not self.has_trigger:
-            log_info(f'Profile "{self.name}" has no trigger applications configured.')
+            log.info(f'Profile "{self.name}" has no trigger applications configured.')
 
         # Polling period
         for value_name, value in zip(('ac_pollingperiod', 'bat_pollingperiod'),
                                      (self.ac_pollingperiod, self.bat_pollingperiod)):
             if value <= 0:
-                log_error(f'Invalid profile "{self.name}": {value_name} must be greater than zero.')
+                log.error(f'Invalid profile "{self.name}": {value_name} must be greater than zero.')
 
         # Online Cores
         self._check_value_in_range('', self.ac_cores_online, [1, CPU.physical_cores])
@@ -198,39 +198,39 @@ class PowerProfile:
 
         # Governor available
         if self.ac_governor not in CPU.governors:
-            log_error(f'Invalid profile "{self.name}": ac_governor "{self.ac_governor}" not in available governors.'
+            log.error(f'Invalid profile "{self.name}": ac_governor "{self.ac_governor}" not in available governors.'
                       f'\nAvailable governors: {CPU.governors}')
 
         if self.bat_governor not in CPU.governors:
-            log_error(f'Invalid profile "{self.name}": bat_governor "{self.bat_governor}" not in available governors.'
+            log.error(f'Invalid profile "{self.name}": bat_governor "{self.bat_governor}" not in available governors.'
                       f'\nAvailable governors: {CPU.governors}')
 
         # Policy available
         if CPU.policies:
             if self.ac_policy not in CPU.policies:
-                log_error(f'Invalid profile "{self.name}": ac_policy "{self.ac_policy}" not in available policies.'
+                log.error(f'Invalid profile "{self.name}": ac_policy "{self.ac_policy}" not in available policies.'
                           f'\nAvailable policies: {CPU.policies}')
 
             if self.bat_policy not in CPU.policies:
-                log_error(f'Invalid profile "{self.name}": bat_policy "{self.bat_policy}" not in available policies.'
+                log.error(f'Invalid profile "{self.name}": bat_policy "{self.bat_policy}" not in available policies.'
                           f'\nAvailable policies: {CPU.policies}')
 
             # Governor - Policy compatibility:
             if self.ac_governor == 'performance':
                 if self.ac_policy != 'performance':
-                    log_error(f'Invalid profile "{self.name}": '
+                    log.error(f'Invalid profile "{self.name}": '
                               f'ac_governor {self.ac_governor} is incompatible with ac_policy {self.ac_policy}.')
 
             if self.bat_governor == 'performance':
                 if self.bat_policy != 'performance':
-                    log_error(f'Invalid profile "{self.name}": '
+                    log.error(f'Invalid profile "{self.name}": '
                               f'bat_governor {self.bat_governor} is incompatible with bat_policy {self.bat_policy}.')
 
         # Warn if policy key but no policies available
         if self.ac_policy and not CPU.policies:
-            log_warning(f'ac_policy present in profile "{self.name}" but CPU does not support policies.')
+            log.warning(f'ac_policy present in profile "{self.name}" but CPU does not support policies.')
         if self.bat_policy and not CPU.policies:
-            log_warning(f'bat_policy present in profile "{self.name}" but CPU does not support policies.')
+            log.warning(f'bat_policy present in profile "{self.name}" but CPU does not support policies.')
 
 # Config IO
 
@@ -239,28 +239,28 @@ def check_config_keys(config):
 
     # Default profile must exist
     if 'DEFAULT' not in config:
-        log_error('DEFAULT profile not present in config file.')
+        log.error('DEFAULT profile not present in config file.')
 
     # Check that all needed keys are present in DEFAULT profile
     provided_default_keys = dict(name='', **config['DEFAULT']).keys()
     needed_default_keys = DEFAULT_PROFILE.keys()
     for needed_key in needed_default_keys:
         if needed_key not in provided_default_keys:
-            log_error(f'DEFAULT profile is missing the following key: {needed_key}.')
+            log.error(f'DEFAULT profile is missing the following key: {needed_key}.')
 
     # Look for invalid keys in every profile
     for profile_name in config:
         for key in config[profile_name]:
             if key not in needed_default_keys:
-                log_error(f'Invalid profile "{profile_name}": invalid key "{key}".')
+                log.error(f'Invalid profile "{profile_name}": invalid key "{key}".')
 
 
 def read_config():
     '''Reads config file, checks values and returns config dict'''
     if not os.path.isfile(CONFIG_PATH):
-        log_info('Configuration file does not exist.')
+        log.info('Configuration file does not exist.')
         write_default_config()
-        log_info(f'New config file has been created at {CONFIG_PATH}.')
+        log.info(f'New config file has been created at {CONFIG_PATH}.')
 
     config = configparser.ConfigParser()
     config.read(CONFIG_PATH)
@@ -270,7 +270,7 @@ def read_config():
 def write_default_config():
     if not is_root():
         print('Configuration file does not exist.')
-        log_error('Root privileges needed to write configuration file.')
+        log.error('Root privileges needed to write configuration file.')
     config = configparser.ConfigParser()
     config['DEFAULT'] = DEFAULT_PROFILE
     with open(CONFIG_PATH, 'w') as file:
