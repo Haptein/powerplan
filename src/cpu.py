@@ -33,13 +33,13 @@ class CPUSpec:
         # Check and warn if there are offline cores (when without root privilege and --system argument)
         cores_offline = list_cores('offline')
         if cores_offline:
-            log.log_info('Offline cores detected: ' + read(CPU_DIR + 'offline'))
+            log.info('Offline cores detected: ' + read(CPU_DIR + 'offline'))
             if is_root():
-                log.log_info('Setting all cores online to enable correct topology detection.')
+                log.info('Setting all cores online to enable correct topology detection.')
                 set_core_status(list_cores('present'), online=1)
             elif '--system' in sys.argv:
-                log.log_warning("CPU topology can't be correctly read (without root privileges)"
-                                ', since there are offline cores.')
+                log.warning("CPU topology can't be correctly read (without root privileges)"
+                            ', since there are offline cores.')
 
         # Model
         self.name = shell('grep "model name" /proc/cpuinfo').split(':')[-1].strip()
@@ -49,7 +49,7 @@ class CPUSpec:
         self.logical_cores = len(list_cores())
         # Reset core status
         if cores_offline and is_root():
-            log.log_info('Setting cores back to initial offline status.')
+            log.info('Setting cores back to initial offline status.')
             set_core_status(cores_offline, online=0)
 
         # Limits
@@ -111,9 +111,9 @@ class CPUSpec:
         # governors_repr, policies_repr
         self.governors_repr = ", ".join(self.governors)
         self.policies_repr = ', '.join(self.policies)
-        log.log_info(f'Available governors: {self.governors_repr}')
+        log.info(f'Available governors: {self.governors_repr}')
         if self.policies:
-            log.log_info(f'Available policies: {self.policies_repr}')
+            log.info(f'Available policies: {self.policies_repr}')
 
     def _thread_siblings(self) -> list:
         # Physical core / Thread sibling detection#set_cores_online()
@@ -140,7 +140,7 @@ class CPUSpec:
                    f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
                    f"\n\tDetected sensors were: {temperature_sensors}"
                    "\n\tPlease open an issue at https://www.github.org/haptein/powerplan")
-            log.log_warning(msg)
+            log.warning(msg)
             return None
 
     def _set_turbo_variables(self):
@@ -162,12 +162,12 @@ class CPUSpec:
         else:
             turbo_path = None
             turbo_allowed = None
-            log.log_info('Turbo boost is not available.')
+            log.info('Turbo boost is not available.')
 
         if turbo_path is not None:
             turbo_allowed = path_is_writable(turbo_path)
             if not turbo_allowed and is_root():
-                log.log_info('Turbo (boost/core) is disabled on BIOS or not available.')
+                log.info('Turbo (boost/core) is disabled on BIOS or not available.')
 
         self.turbo_path = turbo_path
         self.turbo_inverse = turbo_inverse
@@ -183,7 +183,7 @@ class RaplLayer:
         self.energy_uj_path = layer_path/'energy_uj'
         # Initialize reading
         self.last_time, self.last_energy = self.read_time_energy()
-        log.log_info(f'IntelRapl layer initialized: {self.name}')
+        log.info(f'IntelRapl layer initialized: {self.name}')
 
     def read_time_energy(self):
         return time.time(), read(self.energy_uj_path, int)
@@ -200,9 +200,9 @@ class RaplLayer:
         if current_energy < self.last_energy:
             # Energy counter overflowed
             energy_delta += self.max_energy_range_uj
-            log.log_info(f'energy range overflow detected for intel-rapl layer:{self.name}.'
-                         f'time delta:{time_delta}, e_i:{current_energy}, e_i-1:{self.last_energy}'
-                         f'energy delta:{energy_delta}')
+            log.info(f'energy range overflow detected for intel-rapl layer:{self.name}.'
+                     f'time delta:{time_delta}, e_i:{current_energy}, e_i-1:{self.last_energy}'
+                     f'energy delta:{energy_delta}')
 
         current_power = energy_delta / time_delta / 10**6  # in Watt
 
@@ -223,9 +223,9 @@ class IntelRapl:
             self.enabled = False
 
         if self.enabled:
-            log.log_info('IntelRapl is enabled.')
+            log.info('IntelRapl is enabled.')
         else:
-            log.log_info('IntelRapl is unavailable.')
+            log.info('IntelRapl is unavailable.')
             return
 
         # If reached this point rapl exists and is enabled

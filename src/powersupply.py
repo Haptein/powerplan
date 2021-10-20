@@ -82,7 +82,7 @@ class PowerSupply(ABC):
                 if path_str not in self.flagged_enodev:
                     # Only warn once to avoid flooding logs
                     self.flagged_enodev.add(path_str)
-                    log.log_warning(f'Kernel: ACPI_BATTERY_VALUE_UNKNOWN when reading {path_str}.')
+                    log.warning(f'Kernel: ACPI_BATTERY_VALUE_UNKNOWN when reading {path_str}.')
                 return None
             else:
                 raise
@@ -92,7 +92,7 @@ class PowerSupply(ABC):
         exists = path.exists()
         reading = self._read(path) if exists else None
         if exists and reading is None:
-            log.log_info(f'Battery interface "{path.name}" detected but doesn\'t work.')
+            log.info(f'Battery interface "{path.name}" detected but doesn\'t work.')
         return exists and reading is not None
 
 
@@ -170,7 +170,7 @@ class Battery(PowerSupply):
         if self._available(self.voltage_now) and self._available(self.charge_now):
             available_methods['ChargeDeltaVoltage'] = self._power_charge_delta_voltage
 
-        log.log_info(f'Available power method(s): {", ".join(available_methods)}')
+        log.info(f'Available power method(s): {", ".join(available_methods)}')
         return available_methods
 
     def _set_power_draw_method(self, method: str = None, history_len: int = 5):
@@ -180,7 +180,7 @@ class Battery(PowerSupply):
             self.power_draw = self._power_unavailable
             self.selected_power_method = None
             if self.present:
-                log.log_info('No battery power draw methods available.')
+                log.info('No battery power draw methods available.')
             return
         # battery present and method(s) available
         if method is None:
@@ -189,7 +189,7 @@ class Battery(PowerSupply):
         # Set method
         self.power_draw = self.available_methods[method]
         self.selected_power_method = method
-        log.log_info(f'Power method selected: {method}')
+        log.info(f'Power method selected: {method}')
         # Prepare history objs if needed
         if method == 'EnergyDelta':
             self.time_history = History(maxlen=history_len)
@@ -278,9 +278,9 @@ def power_supply_detection() -> tuple:
 
     # Log
     if ac_path is not None:
-        log.log_info(f'AC-adapter detected: {ac_path.name}')
+        log.info(f'AC-adapter detected: {ac_path.name}')
     if bat_path is not None:
-        log.log_info(f'Battery detected: {bat_path.name}')
+        log.info(f'Battery detected: {bat_path.name}')
 
     return ACAdapter(ac_path), Battery(bat_path)
 

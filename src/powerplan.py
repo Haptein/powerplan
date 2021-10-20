@@ -39,7 +39,7 @@ def single_activation(profile: str):
         else:
             print(f'Profile {profile} active.')
     else:
-        log.log_error(f'Profile "{ARGS.profile}" not found in config file.')
+        log.error(f'Profile "{ARGS.profile}" not found in config file.')
 
 def main_loop(monitor_mode: bool):
     profiles = read_profiles()
@@ -70,7 +70,7 @@ def main_loop(monitor_mode: bool):
             # If profile or charging state changed:
             if (profile.name != last_profile_name) or (charging_state != last_charging_state):
                 # Log only on changes, even if --persistent is used (to avoid flooding journal)
-                log.log_info(f'Applying profile: {profile.name}-{"AC" if charging_state else "Battery"}')
+                log.info(f'Applying profile: {profile.name}-{"AC" if charging_state else "Battery"}')
                 if not ARGS.persistent:
                     profile.apply(charging_state)
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     # Stuff that needs root
     if not shell.is_root():
-        log.log_error('Must be run with root provileges.')
+        log.error('Must be run with root provileges.')
 
     if ARGS.uninstall:
         shell.uninstall()
@@ -130,10 +130,10 @@ if __name__ == '__main__':
             monitor_mode = True
         elif ARGS.profile:
             # Profile will be overriden
-            log.log_warning('Single profile activation will get overwritten by the already running instance.')
+            log.warning('Single profile activation will get overwritten by the already running instance.')
         else:
-            log.log_error('An instance is already running. '
-                          'You can monitor system status with: powerplan --status.')
+            log.error('An instance is already running. '
+                      'You can monitor system status with: powerplan --status.')
     else:
         monitor_mode = False
 
