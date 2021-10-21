@@ -35,7 +35,7 @@ class History(deque):
             return None
 
 
-class PowerSupply(ABC):
+class PowerSupplyDevice(ABC):
     def __init__(self, path: Path = None):
         '''path: device's dir Path'''
         self.path = path
@@ -96,7 +96,7 @@ class PowerSupply(ABC):
         return exists and reading is not None
 
 
-class ACAdapter(PowerSupply):
+class ACAdapter(PowerSupplyDevice):
     def _set_paths(self):
         self.online = self.path/'online'
 
@@ -116,7 +116,7 @@ class ACAdapter(PowerSupply):
                 return None
 
 
-class Battery(PowerSupply):
+class Battery(PowerSupplyDevice):
     def __init__(self, path):
         super().__init__(path)
         if self.present:
