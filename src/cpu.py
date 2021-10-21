@@ -22,9 +22,6 @@ SYSTEM_DIR = '/sys/devices/system/'
 CPU_DIR = SYSTEM_DIR + 'cpu/'
 CPUFREQ_DIR = CPU_DIR + 'cpu0/cpufreq/'
 
-# the order in this list embodies lookup priority
-ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz', 'thinkpad']
-
 
 class CPUSpec:
     ''' Stores all static CPU attributes and paths (that vary between models and drivers) '''
@@ -130,14 +127,16 @@ class CPUSpec:
         return sorted(siblings_set)
 
     def _available_temp_sensor(self):
-        '''Returns first available sensor in ALLOWED_TEMP_SENSORS, or None '''
+        '''Returns first available sensor in allowed_sensors, or None '''
         temperature_sensors = psutil.sensors_temperatures()
-        for sensor in ALLOWED_TEMP_SENSORS:
+        # the order in this list embodies lookup priority
+        allowed_sensors = ['coretemp', 'k10temp', 'zenpower', 'acpitz', 'thinkpad']
+        for sensor in allowed_sensors:
             if sensor in temperature_sensors:
                 return sensor
         else:
             msg = ("Couldn't detect a known CPU temperature sensor."
-                   f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
+                   f"\n\tKnown CPU temp sensors are: {allowed_sensors}"
                    f"\n\tDetected sensors were: {temperature_sensors}"
                    "\n\tPlease open an issue at https://www.github.org/haptein/powerplan")
             log.warning(msg)
