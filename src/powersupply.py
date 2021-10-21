@@ -253,56 +253,61 @@ class Battery(PowerSupplyDevice):
             return None
 
 
-def power_supply_detection() -> tuple:
-    '''Returns tuple of ACAdapter, Battery'''
-    power_supply_dir = Path('/sys/class/power_supply/')
-    # /type values: "Battery", "UPS", "Mains", "USB", "Wireless"
+class PowerSupply():
+    def __init__(self):
+        self.ac_adapter, self.battery = self.power_supply_detection()
 
-    # AC detection
-    for dev_type in power_supply_dir.glob('A*/type'):
-        # If type Mains and needed interface exists stop looking
-        if read(dev_type) == 'Mains' and dev_type.with_name('online').exists():
-            ac_path = Path(dev_type).parent
-            break
-    else:
-        ac_path = None
+    def power_supply_detection() -> tuple:
+        '''Returns tuple of ACAdapter, Battery'''
+        power_supply_dir = Path('/sys/class/power_supply/')
+        # /type values: "Battery", "UPS", "Mains", "USB", "Wireless"
 
-    # Batery detection
-    for dev_type in power_supply_dir.glob('BAT*/type'):
-        # If type Battery and needed interface exists stop looking
-        if read(dev_type) == 'Battery' and dev_type.with_name('status').exists():
-            bat_path = Path(dev_type).parent
-            break
-    else:
-        bat_path = None
+        # AC detection
+        for dev_type in power_supply_dir.glob('A*/type'):
+            # If type Mains and needed interface exists stop looking
+            if read(dev_type) == 'Mains' and dev_type.with_name('online').exists():
+                ac_path = Path(dev_type).parent
+                break
+        else:
+            ac_path = None
 
-    # Log
-    if ac_path is not None:
-        log.info(f'AC-adapter detected: {ac_path.name}')
-    if bat_path is not None:
-        log.info(f'Battery detected: {bat_path.name}')
+        # Batery detection
+        for dev_type in power_supply_dir.glob('BAT*/type'):
+            # If type Battery and needed interface exists stop looking
+            if read(dev_type) == 'Battery' and dev_type.with_name('status').exists():
+                bat_path = Path(dev_type).parent
+                break
+        else:
+            bat_path = None
 
-    return ACAdapter(ac_path), Battery(bat_path)
+        # Log
+        if ac_path is not None:
+            log.info(f'AC-adapter detected: {ac_path.name}')
+        if bat_path is not None:
+            log.info(f'Battery detected: {bat_path.name}')
 
+        return ACAdapter(ac_path), Battery(bat_path)
 
-def ac_power() -> bool:
-    '''
-    Is system AC_powered/charging?
-    Deals with unavailable Battery/ACAdapter
-    '''
-    ac_supplying = AC.supplying_power()
-    bat_supplying = BAT.supplying_power()
-    if ac_supplying is not None:
-        return ac_supplying
-    else:
-        return not bat_supplying
+    def ac_power(self) -> bool:
+        '''
+        Is system AC_powered/charging?
+        Deals with unavailable Battery/ACAdapter
+        '''
+        ac_supplying = self.ac_adapter.supplying_power()
+        bat_supplying = self.battery.supplying_power()
+        if ac_supplying is not None:
+            return ac_supplying
+        else:
+            return not bat_supplying
+
+    def battery_draw(self) -> float:
+        '''Return battery power draw'''
+        return self.battery.power_draw()
+
 
 def tree() -> str:
     return shell('grep . /sys/class/power_supply/*/* -d skip')
 
-
-#  Globals
-AC, BAT = power_supply_detection()
 
 if __name__ == '__main__':
     print(tree())
