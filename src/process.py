@@ -13,6 +13,7 @@ class ProcessReader:
     def __init__(self, profiles=None):
         self.triggerapps = self._get_triggerapps(profiles)
         self.triggerapps_found = set()
+        self.profiles = profiles
         self.pid_names = dict()
         self.pids_last = set()
         self.update()
@@ -50,9 +51,7 @@ class ProcessReader:
         Updates self.triggerapps and clears self.pids_last
         useful for hot-reloading profiles
         '''
-        self.triggerapps = self._get_triggerapps(profiles)
-        self.pid_names = dict()
-        self.pids_last = set()
+        self.__init__(profiles=profiles)
 
     def _get_triggerapps(self, profiles=None) -> set:
         if profiles is None:
@@ -62,20 +61,20 @@ class ProcessReader:
             triggerapps.update([p[:15] for p in profiles[profile_name].triggerapps])
         return triggerapps
 
-    def triggered_profile(self, profiles) -> config.PowerProfile:
+    def triggered_profile(self) -> config.PowerProfile:
         '''Returns triggered PowerProfile object according to running processes'''
         # Check running processes
         if self.triggerapps:
             self.update()
 
             # check profile trigger apps against procs
-            for profile in profiles.values():
+            for profile in self.profiles.values():
                 if profile.triggerapp_present(self.triggerapps_found):
                     return profile
             else:
-                return profiles['DEFAULT']
+                return self.profiles['DEFAULT']
         else:
-            return profiles['DEFAULT']
+            return self.profiles['DEFAULT']
 
 
 def already_running(name: str = 'powerplan') -> bool:
