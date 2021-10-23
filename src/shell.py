@@ -1,3 +1,4 @@
+import time
 from os import getuid
 from subprocess import PIPE, run
 
@@ -22,6 +23,12 @@ def path_is_writable(path) -> bool:
         return False
     else:
         return True
+
+def wait_on_boot(t=10):
+    '''Make sure t seconds have passed since boot'''
+    time_since_boot = time.monotonic()
+    if time_since_boot < t:
+        time.sleep(t - time_since_boot)
 
 def uninstall():
     shell('/opt/powerplan/uninstall')

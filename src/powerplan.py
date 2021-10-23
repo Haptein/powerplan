@@ -89,6 +89,9 @@ def main_loop(monitor_mode: bool):
 
 
 if __name__ == '__main__':
+    # If running at boot, wait for sysfs to itialize needed resources
+    shell.wait_on_boot()
+
     # Stuff that doesn't need root
 
     # List profiles and exit
