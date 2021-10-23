@@ -85,7 +85,7 @@ class CPUSpec:
             self.basefreq = read(CPUFREQ_DIR + 'base_frequency', dtype=int)
             self.min_perf_pct = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
             self.max_perf_pct = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
-            # he goes stuff unavailable with intel-pstate
+            # here goes stuff unavailable with intel-pstate
         else:
             self.driver = 'cpufreq'
             # stuff unavailable in cpufreq drivers
@@ -443,14 +443,6 @@ def set_tdp_limits(PL1: int, PL2: int):
             if PL1 > 0 or PL2 > 0:
                 PL1_path.with_name('enabled').write_text('1')
 
-def wait_for_monotonic(t):
-    '''Make sure t seconds have passed since boot'''
-    time_since_boot = time.monotonic()
-    if time_since_boot < t:
-        time.sleep(t - time_since_boot)
 
-
-# Wait to make sure rapl infrastructure is fully initialized by driver if available
-wait_for_monotonic(t=10)
 CPU = CPUSpec()
 RAPL = get_rapl()
