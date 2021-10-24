@@ -74,6 +74,7 @@ class PowerProfile:
         self.triggerapps = [app.strip() for app in section['triggerapps'].split(',') if app]
         self.has_trigger = bool(self.triggerapps)
         self.system = system
+        self.description = self._description()
 
         # Type check / error handling
         i, b = section.getint, section.getboolean
@@ -110,6 +111,12 @@ class PowerProfile:
         # Value checks
         self._validate()
         self._set_freqs_to_khz()
+
+    def _description(self) -> str:
+        description = self.name
+        if self.has_trigger:
+            description += f'\t\ttriggered by {", ".join(self.triggerapps)}'
+        return description
 
     def apply(self, status):
         ''' Applies profile configuration'''
