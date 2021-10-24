@@ -114,8 +114,8 @@ if __name__ == '__main__':
     # List profiles and exit
     if ARGS.list:
         profiles = read_profiles(system=system)
-        for name in profiles:
-            print(name)
+        for profile in profiles.values():
+            print(profile.description)
         exit(0)
 
     if ARGS.system:
