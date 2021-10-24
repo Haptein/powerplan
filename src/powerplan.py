@@ -46,6 +46,7 @@ def single_activation(profile: str, system: systemstatus.System):
 def main_loop(monitor_mode: bool, system: systemstatus.System):
     profiles = read_profiles(system)
 
+    # Get status object and needed fields at iteration start
     if ARGS.status:
         status = systemstatus.StatusMonitor(system, profiles)
         partials = ['time_stamp', 'ac_power', 'triggered_profile']
@@ -57,9 +58,10 @@ def main_loop(monitor_mode: bool, system: systemstatus.System):
         running_process = psutil.Process()
 
     while True:
+        # we need this to time the sleeps periods
         iteration_start = time()
 
-        if ARGS.reload:
+        if ARGS.reload:  # profile hot-reloading
             profiles = read_profiles(system)
             status.reset()
 
@@ -75,9 +77,9 @@ def main_loop(monitor_mode: bool, system: systemstatus.System):
             elif ARGS.persistent:
                 profile.apply(status)
 
-        # Everything else
         if ARGS.status:
-            # Update the rest of fields
+            # Update the rest of fields here in order to display
+            # the status after the profile has been applied
             status.partial_update()
             monitor.show_system_status(system, status, monitor_mode)
         if ARGS.debug:

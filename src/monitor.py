@@ -74,7 +74,3 @@ def debug_runtime_info(process, profile, iteration_start):
     process_util, process_mem = read_process_cpu_mem(process)
     time_iter = (time() - iteration_start) * 1000  # ms
     print(f'Process resources: CPU {process_util:.2f}%, Memory {process_mem:.2f}%, Time {time_iter:.3f}ms')
-
-
-if __name__ == '__main__':
-    debug_power_info()
