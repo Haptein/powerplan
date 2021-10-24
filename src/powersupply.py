@@ -1,38 +1,11 @@
 import errno
 from time import time
 from pathlib import Path
-from collections import deque
 from abc import ABC, abstractmethod
 
 import log
 from shell import read, shell
-
-
-class History(deque):
-    def __init__(self, maxlen=2):
-        super().__init__(maxlen=maxlen)
-
-    def update(self, value):
-        '''Stream value into deque'''
-        if self.__len__() == self.maxlen:
-            _ = self.popleft()
-            self.append(value)
-        else:
-            self.append(value)
-
-    def delta(self):
-        '''Returns the difference between the last and first value'''
-        if self.__len__() > 1:
-            return self[-1] - self[0]
-        else:
-            return None
-
-    def changed(self) -> bool:
-        '''Returns true if field's last value is different from the second last one'''
-        if self.__len__() > 1:
-            return self[-1] != self[-2]
-        else:
-            return None
+from system import History
 
 
 class PowerSupplyDevice(ABC):

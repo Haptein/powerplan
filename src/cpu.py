@@ -292,7 +292,7 @@ class Cpu:
         self.rapl = self.get_rapl()
 
     # CPU STATUS
-    def list_cores(status: str = 'present') -> list:
+    def list_cores(self, status: str = 'present') -> list:
         """list coreid's with status: offline, online, present"""
         return list_cores(status)
 
@@ -325,7 +325,7 @@ class Cpu:
                     for core_id in core_ids:
                         Path(CPU_DIR + f'cpu{core_id}/online').write_text('0')
 
-    def read_cpu_utilization(mode='max'):
+    def read_cpu_utilization(self, mode='max'):
         '''
         CPU utilization
         mode : str =  ['avg', 'max', 'all']
@@ -359,7 +359,7 @@ class Cpu:
 
     # CPU Freq Scaling
 
-    def read_governor(core_id: int = 0) -> str:
+    def read_governor(self, core_id: int = 0) -> str:
         return read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor')
 
     def set_governor(self, governor):
@@ -389,7 +389,7 @@ class Cpu:
                      if line.startswith('cpu M')]
         return dict(zip(cores_online, cur_freqs))
 
-    def read_freq_range(core_id: int = 0) -> list:
+    def read_freq_range(self, core_id: int = 0) -> list:
         scaling_min_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
         scaling_max_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq', int)
         return [scaling_min_freq, scaling_max_freq]
