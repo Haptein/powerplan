@@ -257,6 +257,7 @@ class PowerSupply():
     def __init__(self):
         self.ac_adapter, self.battery = self.power_supply_detection()
 
+    @staticmethod
     def power_supply_detection() -> tuple:
         '''Returns tuple of ACAdapter, Battery'''
         power_supply_dir = Path('/sys/class/power_supply/')
