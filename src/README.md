@@ -3,7 +3,8 @@
     - config : reading and parsing and application of profile data
     - cpu : processor configuration interface
     - powerplan : main file
-    - status : system status, information display
+    - system : system and system status classes
+    - monitor : system status monitoring
     - log : logging
     - powersupply : ac-adapter/battery/UPS interface
     - process : Process reading
