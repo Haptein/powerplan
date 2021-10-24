@@ -34,7 +34,8 @@ def cpu_ranges_to_list(cpu_ranges: str) -> list:
             cpus.append(int(cpu_range))
     return cpus
 
-def list_cores(status='present') -> list:
+def list_cores(status: str = 'present') -> list:
+    """list coreid's with status: offline, online, present"""
     assert status in ['offline', 'online', 'present']
     cpu_ranges = read(CPU_DIR + status)
     if not cpu_ranges:
@@ -282,6 +283,9 @@ class Cpu:
         self.rapl = self.get_rapl()
 
     # CPU STATUS
+    def list_cores(status: str = 'present') -> list:
+        """list coreid's with status: offline, online, present"""
+        return list_cores(status)
 
     def read_physical_core_status(self, core_num: int) -> bool:
         assert 0 <= core_num and core_num <= self.spec.physical_cores - 1
