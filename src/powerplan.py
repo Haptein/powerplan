@@ -93,6 +93,10 @@ if __name__ == '__main__':
     shell.wait_on_boot()
     log.info(f'powerplan: v{__version__}')
 
+    ARGS = argparser.parse_args()
+    # --reload forces --persistent
+    ARGS.persistent = ARGS.persistent or ARGS.reload
+
     # Stuff that doesn't need root
 
     if ARGS.version:
@@ -129,7 +133,7 @@ if __name__ == '__main__':
         shell.enable_daemon()
         exit(0)
 
-    # Check if already running
+    # Check if already running and define monitor mode accordingly
     if process.already_running():
         # Monitor mode
         if ARGS.status:
