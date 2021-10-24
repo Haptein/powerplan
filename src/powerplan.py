@@ -7,7 +7,7 @@ import psutil
 
 import log
 import shell
-import status
+import monitor
 import process
 import powersupply
 from config import read_profiles
@@ -35,7 +35,7 @@ def single_activation(profile: str):
     if profile in profiles:
         profiles[profile].apply(powersupply.ac_power())
         if ARGS.status:
-            status.show_system_status(profiles[ARGS.profile], monitor_mode=True)
+            monitor.show_system_status(profiles[ARGS.profile], monitor_mode=True)
         else:
             print(f'Profile {profile} active.')
     else:
@@ -76,9 +76,9 @@ def main_loop(monitor_mode: bool):
 
         # Everything else
         if ARGS.status:
-            status.show_system_status(profile, monitor_mode, charging_state)
+            monitor.show_system_status(profile, monitor_mode, charging_state)
         if ARGS.debug:
-            status.debug_runtime_info(running_process, profile, iteration_start)
+            monitor.debug_runtime_info(running_process, profile, iteration_start)
 
         # Update last state
         last_profile_name = profile.name
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     # Version
     if ARGS.version:
-        status.print_version()
+        monitor.print_version()
         exit(0)
 
     if ARGS.log:
@@ -111,7 +111,7 @@ if __name__ == '__main__':
         exit(0)
 
     if ARGS.system:
-        print(status.SYSTEM_INFO)
+        print(monitor.SYSTEM_INFO)
         exit(0)
 
     # Stuff that needs root
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     # Debug info
     if ARGS.debug:
-        status.debug_power_info()
+        monitor.debug_power_info()
 
     try:
         main_loop(monitor_mode)
