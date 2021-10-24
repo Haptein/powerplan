@@ -9,11 +9,11 @@ import log
 import shell
 import monitor
 import process
+import systemstatus
+from cpu import Cpu
 from __init__ import __version__
 from config import read_profiles
-from cpu import Cpu
 from powersupply import PowerSupply
-from system import System, MonitorSystemStatus, DaemonSystemStatus
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
@@ -28,15 +28,14 @@ argparser.add_argument('--system', action='store_true', help='show system info a
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('--verbose', action='store_true', help='print runtime info')
 argparser.add_argument('--version', action='store_true', help='show program version and exit')
-ARGS = argparser.parse_args()
 
-# --reload forces --persistent
-ARGS.persistent = ARGS.persistent or ARGS.reload
 
-def single_activation(profile: str, system: System):
+def single_activation(profile: str, system: systemstatus.System):
     profiles = read_profiles(system)
     if profile in profiles:
-        profiles[profile].apply(system.powersupply.ac_power())
+        status = systemstatus.StatusMinimal(system, profiles)
+        status.update()
+        profiles[profile].apply(status)
         if ARGS.status:
             monitor.show_system_status(profiles[ARGS.profile], monitor_mode=True)
         else:
@@ -44,14 +43,14 @@ def single_activation(profile: str, system: System):
     else:
         log.error(f'Profile "{ARGS.profile}" not found in config file.')
 
-def main_loop(monitor_mode: bool, system: System):
+def main_loop(monitor_mode: bool, system: systemstatus.System):
     profiles = read_profiles(system)
 
     if ARGS.status:
-        status = MonitorSystemStatus(system, profiles)
+        status = systemstatus.StatusMonitor(system, profiles)
         partials = ['time_stamp', 'ac_power', 'triggered_profile']
     else:
-        status = DaemonSystemStatus(system, profiles)
+        status = systemstatus.StatusMinimal(system, profiles)
         partials = ['ac_power', 'triggered_profile']
 
     if ARGS.debug:
@@ -108,7 +107,7 @@ if __name__ == '__main__':
         exit(0)
 
     # Prepare system interface
-    system = System(cpu=Cpu(), powersupply=PowerSupply())
+    system = systemstatus.System(cpu=Cpu(), powersupply=PowerSupply())
 
     # List profiles and exit
     if ARGS.list:
@@ -149,7 +148,7 @@ if __name__ == '__main__':
 
     # Activate profile and exit
     if ARGS.profile:
-        single_activation(ARGS.profile)
+        single_activation(ARGS.profile, system=system)
         exit(0)
 
     try:
