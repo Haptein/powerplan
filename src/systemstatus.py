@@ -214,12 +214,12 @@ class SystemStatus():
             # and data
             writer.writerows(zip(*self.history.values()))
 
-class DaemonSystemStatus(SystemStatus):
+class StatusMinimal(SystemStatus):
     def __init__(self, system: System, profiles: dict):
         fields = ('triggered_profile', 'ac_power')
         super().__init__(system, profiles, fields)
 
-class MonitorSystemStatus(SystemStatus):
+class StatusMonitor(SystemStatus):
     def __init__(self, system: System, profiles: dict):
         fields = ['time_stamp',
                   'frequency',

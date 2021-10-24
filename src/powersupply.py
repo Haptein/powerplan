@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 import log
 from shell import read, shell
-from system import History
+from systemstatus import History
 
 
 class PowerSupplyDevice(ABC):

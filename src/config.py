@@ -3,7 +3,6 @@ import os
 import configparser
 from time import time, sleep
 
-import powersupply
 import log
 from shell import is_root
 

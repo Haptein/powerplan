@@ -1,11 +1,8 @@
 import subprocess
 from time import time
-from datetime import datetime
 
 import psutil
-
-import powersupply
-from system import System, SystemStatus
+from systemstatus import System, SystemStatus
 
 def show_system_status(system: System, status: SystemStatus, monitor_mode: bool):
     '''Prints System status during runtime'''
