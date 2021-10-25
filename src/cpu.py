@@ -297,7 +297,12 @@ def read_temperature() -> float:
 
 def read_crit_temp() -> int:
     if CPU.temp_sensor:
-        return int(psutil.sensors_temperatures()[CPU.temp_sensor][0].critical)
+        # psutil temperature values can return None
+        critical_temp = psutil.sensors_temperatures()[CPU.temp_sensor][0].critical
+        if critical_temp is None:
+            return 100
+        else:
+            return int(critical_temp)
     else:
         # If no crit temp found default to 100
         return 100
