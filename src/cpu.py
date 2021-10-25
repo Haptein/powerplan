@@ -55,9 +55,18 @@ class CPUSpec:
         # Limits
         self.minfreq = read(CPUFREQ_DIR + 'cpuinfo_min_freq', dtype=int)
         self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
-        self.temp_sensor = self._available_temp_sensor()
-        self.crit_temp = int(psutil.sensors_temperatures()[self.temp_sensor][0].critical)
         self._set_turbo_variables()
+        self.temp_sensor = self._available_temp_sensor()
+
+        # Read critical temperature, default to 100 if unavailable
+        if self.temp_sensor:
+            critical_temp = psutil.sensors_temperatures()[self.temp_sensor][0].critical
+            if critical_temp is None:
+                self.crit_temp = 100
+            else:
+                self.crit_temp = int(critical_temp)
+        else:
+            self.crit_temp = 100
 
         # governors / policies
         self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
