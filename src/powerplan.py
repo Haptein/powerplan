@@ -98,8 +98,12 @@ if __name__ == '__main__':
     # --reload forces --persistent
     ARGS.persistent = ARGS.persistent or ARGS.reload
 
-    # Stuff that doesn't need root
+    # uninstall goes first so if something else fails, user can still easily uninstall
+    if ARGS.uninstall:
+        shell.uninstall()
+        exit(0)
 
+    # Stuff that doesn't need root
     if ARGS.version:
         print(f'powerplan {__version__}')
         exit(0)
@@ -108,8 +112,12 @@ if __name__ == '__main__':
         log.print_log()
         exit(0)
 
-    # Prepare system interface
+    # Initialize system interface
     system = systemstatus.System(cpu=Cpu(), powersupply=PowerSupply())
+
+    if ARGS.system:
+        print(system.info)
+        exit(0)
 
     # List profiles and exit
     if ARGS.list:
@@ -118,17 +126,9 @@ if __name__ == '__main__':
             print(profile.description)
         exit(0)
 
-    if ARGS.system:
-        print(system.info)
-        exit(0)
-
     # Stuff that needs root
     if not shell.is_root():
         log.error('Must be run with root provileges.')
-
-    if ARGS.uninstall:
-        shell.uninstall()
-        exit(0)
 
     if ARGS.daemon:
         shell.enable_daemon()
