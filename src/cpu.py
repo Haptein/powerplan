@@ -84,16 +84,7 @@ class CPUSpecification:
         self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
         self._set_turbo_variables()
         self.temp_sensor = self._available_temp_sensor()
-
-        # Read critical temperature, default to 100 if unavailable
-        if self.temp_sensor:
-            critical_temp = psutil.sensors_temperatures()[self.temp_sensor][0].critical
-            if critical_temp is None:
-                self.crit_temp = 100
-            else:
-                self.crit_temp = int(critical_temp)
-        else:
-            self.crit_temp = 100
+        self.crit_temp = self._read_crit_temp(self.temp_sensor)
 
         # governors / policies
         self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
@@ -165,7 +156,7 @@ class CPUSpecification:
                 siblings_set.add(siblings)
         return sorted(siblings_set)
 
-    def _available_temp_sensor(self):
+    def _available_temp_sensor(self) -> str:
         '''Returns first available sensor in allowed_sensors, or None '''
         temperature_sensors = psutil.sensors_temperatures()
         # the order in this list embodies lookup priority
@@ -180,6 +171,17 @@ class CPUSpecification:
                    "\n\tPlease open an issue at https://www.github.org/haptein/powerplan")
             log.warning(msg)
             return None
+
+    def _read_crit_temp(self, temp_sensor: str) -> int:
+        '''Read critical temperature, default to 100 if unavailable'''
+        if self.temp_sensor is not None:
+            critical_temp = psutil.sensors_temperatures()[self.temp_sensor][0].critical
+            if critical_temp is None:
+                return 100
+            else:
+                return int(critical_temp)
+        else:
+            return 100
 
     def _set_turbo_variables(self):
         '''Sets: turbo_allowed, turbo_file, turbo_inverse'''
@@ -349,13 +351,6 @@ class Cpu:
             return psutil.sensors_temperatures()[self.spec.temp_sensor][0].current
         else:
             return -1
-
-    def read_crit_temp(self) -> int:
-        if self.spec.temp_sensor:
-            return int(psutil.sensors_temperatures()[self.spec.temp_sensor][0].critical)
-        else:
-            # If no crit temp found default to 100
-            return 100
 
     # CPU Freq Scaling
 
