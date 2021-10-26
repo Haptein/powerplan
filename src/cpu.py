@@ -9,12 +9,8 @@ import log
 from shell import shell, is_root, read, path_is_writable
 
 '''
-File structure:
-PATHS
-CPUSpec
-RAPL
-CPU INPUT
-CPU OUTPUT
+This module holds the Cpu class (cpu configuration interface)
+which also contains an instance of the CPUSpecification class
 '''
 
 # PATHS
