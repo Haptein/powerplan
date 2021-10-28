@@ -1,6 +1,7 @@
 import csv
 import platform
 from time import time
+from statistics import mean
 from collections import deque
 from datetime import datetime
 import psutil
@@ -141,11 +142,9 @@ class SystemStatus():
             cpu_util_avg=(self.cpu.read_cpu_utilization, {'mode': 'avg'}),
             cpu_util_max=(self.cpu.read_cpu_utilization, {'mode': 'max'}),
             # Split read freq range in min and max
-            #freq_max=(),
-            #freq_min=(),
-            # Need to implement
-            #avg_util=(,),
-            #avg_freq=(,),
+            frequency_range_max=(lambda: self.cpu.read_freq_range()[1], {}),
+            frequency_avg=(lambda: int(mean(self.cpu.read_current_freq().values())), {}),
+            frequency_max=(lambda: int(max(self.cpu.read_current_freq().values())), {})
         )
 
         field_methods = {key: builtin_fields[key] for key in builtin_fields if key in fields}
@@ -169,7 +168,10 @@ class SystemStatus():
         self.partially_updated = set()
 
     def partial_update(self, fields: list = None):
-        '''Updates ac_power and suggested_profile'''
+        '''
+        Updates specified fields' values
+        if fields==None, updates all the fields that haven't been partially updated
+        '''
         # Default updates all fields not updated
         if fields is None:
             fields = [field for field in self.history if field not in self.partially_updated]
@@ -183,6 +185,16 @@ class SystemStatus():
         for key in fields:
             func, kwargs = self.field_methods[key]
             self.history[key].update(func(**kwargs))
+
+    def manual_partial_update(self, field_values: dict):
+        '''Updates fields' with provided values'''
+        assert all([key in self.history for key in field_values])
+        for key, value in field_values.items():
+            self.history[key].update(value)
+        # Update partially updated set and reset it if al fields have been updated
+        self.partially_updated.update(field_values.keys())
+        if self.partially_updated == self.fields:
+            self.partially_updated = set()
 
     def changed(self, fields: list = None) -> bool:
         '''
@@ -224,6 +236,21 @@ class StatusMonitor(SystemStatus):
         fields = ['time_stamp',
                   'frequency',
                   'triggered_profile',
+                  'ac_power',
+                  'governor',
+                  'policy',
+                  'cores_online',
+                  'turbo',
+                  'package_power',
+                  'battery_draw',
+                  'package_temp']
+        super().__init__(system, profiles, fields)
+
+class StatusLog(SystemStatus):
+    def __init__(self, system: System, profiles: dict):
+        fields = ['time',
+                  'cores_online',
+                  'frequency',
                   'ac_power',
                   'governor',
                   'policy',

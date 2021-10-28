@@ -9,7 +9,7 @@
     - powersupply : ac-adapter/battery/UPS interface
     - process : Process reading
     - shell : shell interface and misc funcs
-    - systemstatus : System and SystemStatus objects
+    - systemstatus : system and status objects
 
 
 ## TODO
