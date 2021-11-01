@@ -59,9 +59,10 @@ powerplan will periodically monitor cpu temps, runnining processes, and charging
 
 **--daemon:**
 powerplan will install and enable itself as a systemd daemon. It runs exactly as if no arguments were provided, at boot time.
+**note:** If you make changes to your configuration make sure to restart the daemon (ie. ```sudo systemctl restart powerplan```)
 
 **--status**
-powerplan displays system configuration periodically. It will also apply such configurations (active mode) unless an instance of powerplan is already running (monitor mode).
+powerplan displays system configuration periodically. It will also apply such configurations (**active mode**) unless an instance of powerplan is already running (**monitor mode**).
 
 **--profile**
 Single profile activation mode. Useful if you'd rather define profiles and switch between them manually.
