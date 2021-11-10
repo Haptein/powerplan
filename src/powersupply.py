@@ -123,11 +123,17 @@ class Battery(PowerSupplyDevice):
 
     def charge_left(self) -> int:
         '''Returns charge left (mAh)'''
-        return self._read(self.charge_now)
+        if self.present:
+            return self._read(self.charge_now)
+        else:
+            return None
 
     def energy_left(self) -> int:
         '''Returns energy left (mWh)'''
-        return self._read(self.energy_now)
+        if self.present:
+            return self._read(self.energy_now)
+        else:
+            return None
 
     # power_draw_methods
     def _available_power_methods(self) -> dict:
@@ -231,9 +237,8 @@ class PowerSupply():
         self.ac_adapter, self.battery = self.power_supply_detection()
 
     @staticmethod
-    def power_supply_detection() -> tuple:
+    def power_supply_detection(power_supply_dir: Path = Path('/sys/class/power_supply/')) -> tuple:
         '''Returns tuple of ACAdapter, Battery'''
-        power_supply_dir = Path('/sys/class/power_supply/')
         # /type values: "Battery", "UPS", "Mains", "USB", "Wireless"
 
         # AC detection

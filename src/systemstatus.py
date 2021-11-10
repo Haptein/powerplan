@@ -124,8 +124,8 @@ class SystemStatus():
             # Battery
             ac_power=(self.powersupply.ac_power, {}),
             battery_draw=(self.battery.power_draw, {}),
-            battery_charge_now=(self.battery.charge_now, {}),
-            battery_energy_now=(self.battery.energy_now, {}),
+            battery_charge_left=(self.battery.charge_left, {}),
+            battery_energy_left=(self.battery.energy_left, {}),
             # RAPL
             package_temp=(self.cpu.read_temperature, {}),
             package_power=(self.rapl.read_power, {}),
