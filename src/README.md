@@ -17,10 +17,10 @@
 ### Core Function
 - System Efficiency modeling (wip, researching...)
 - Temperature control system (researching...)
-- Add UPS as powersupply
 - Add support for amd-pstate (after it lands in mainline)
 
 ### QoL
 - Profile editing GUI
 - Check dependencies on install
 - Write optimized temp reading (psutil reads ALL sensors each time)
+- Add global config parameters: notify/persistence
