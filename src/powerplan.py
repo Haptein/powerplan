@@ -7,10 +7,13 @@ import psutil
 
 import log
 import shell
-import status
+import monitor
 import process
-import powersupply
+import systemstatus
+from cpu import Cpu
+from __init__ import __version__
 from config import read_profiles
+from powersupply import PowerSupply
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
@@ -25,128 +28,132 @@ argparser.add_argument('--system', action='store_true', help='show system info a
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('--verbose', action='store_true', help='print runtime info')
 argparser.add_argument('--version', action='store_true', help='show program version and exit')
-ARGS = argparser.parse_args()
 
-# --reload forces --persistent
-ARGS.persistent = ARGS.persistent or ARGS.reload
 
-def single_activation(profile: str):
-    profiles = read_profiles()
+def single_activation(profile: str, system: systemstatus.System):
+    profiles = read_profiles(system)
     if profile in profiles:
-        profiles[profile].apply(powersupply.ac_power())
+        status = systemstatus.StatusMinimal(system, profiles)
+        status.update()
+        profiles[profile].apply(status)
         if ARGS.status:
-            status.show_system_status(profiles[ARGS.profile], monitor_mode=True)
+            monitor.show_system_status(profiles[ARGS.profile], monitor_mode=True)
         else:
             print(f'Profile {profile} active.')
     else:
-        log.log_error(f'Profile "{ARGS.profile}" not found in config file.')
+        log.error(f'Profile "{ARGS.profile}" not found in config file.')
 
-def main_loop(monitor_mode: bool):
-    profiles = read_profiles()
-    process_reader = process.ProcessReader(profiles)
+def main_loop(monitor_mode: bool, system: systemstatus.System):
+    profiles = read_profiles(system)
+
+    # Get status object and needed fields at iteration start
+    if ARGS.status:
+        status = systemstatus.StatusMonitor(system, profiles)
+        partials = ['time_stamp', 'ac_power', 'triggered_profile']
+    else:
+        status = systemstatus.StatusMinimal(system, profiles)
+        partials = ['ac_power', 'triggered_profile']
 
     if ARGS.debug:
         running_process = psutil.Process()
 
-    # Variables used if no --persistent flag is used
-    last_profile_name = None
-    last_charging_state = None
     while True:
+        # we need this to time the sleeps periods
         iteration_start = time()
 
-        if ARGS.reload:
-            profiles = read_profiles()
-            process_reader.reset(profiles)
+        if ARGS.reload:  # profile hot-reloading
+            profiles = read_profiles(system)
+            status.reset()
 
-        # Get profile and charging state
-        profile = process_reader.triggered_profile(profiles)
-        charging_state = powersupply.ac_power()
+        status.partial_update(partials)
 
         # Profile application
+        profile = status['triggered_profile']
         if not monitor_mode:
-            if ARGS.persistent:
-                profile.apply(charging_state)
-
-            # If profile or charging state changed:
-            if (profile.name != last_profile_name) or (charging_state != last_charging_state):
+            if status.changed(['ac_power', 'triggered_profile']):
                 # Log only on changes, even if --persistent is used (to avoid flooding journal)
-                log.log_info(f'Applying profile: {profile.name}-{"AC" if charging_state else "Battery"}')
-                if not ARGS.persistent:
-                    profile.apply(charging_state)
+                log.info(f'Applying profile: {profile.name}-{"AC" if status["ac_power"] else "Battery"}')
+                profile.apply(status)
+            elif ARGS.persistent:
+                profile.apply(status)
 
-        # Everything else
         if ARGS.status:
-            status.show_system_status(profile, monitor_mode, charging_state)
+            # Update the rest of fields here in order to display
+            # the status after the profile has been applied
+            status.partial_update()
+            monitor.show_system_status(system, status, monitor_mode)
         if ARGS.debug:
-            status.debug_runtime_info(running_process, profile, iteration_start)
-
-        # Update last state
-        last_profile_name = profile.name
-        last_charging_state = charging_state
+            monitor.debug_runtime_info(running_process, profile, iteration_start)
 
         # Then sleep needed time
-        profile.sleep(iteration_start=iteration_start, ac_power=charging_state)
+        profile.sleep(iteration_start=iteration_start, status=status)
 
 
 if __name__ == '__main__':
-    # Stuff that doesn't need root
+    # If running at boot, wait for sysfs to itialize needed resources
+    shell.wait_on_boot()
+    log.info(f'powerplan: v{__version__}')
 
-    # List profiles and exit
-    if ARGS.list:
-        profiles = read_profiles()
-        for name in profiles:
-            print(name)
+    ARGS = argparser.parse_args()
+    # --reload forces --persistent
+    ARGS.persistent = ARGS.persistent or ARGS.reload
+
+    # uninstall goes first so if something else fails, user can still easily uninstall
+    if ARGS.uninstall:
+        shell.uninstall()
         exit(0)
 
-    # Version
+    # Stuff that doesn't need root
     if ARGS.version:
-        status.print_version()
+        print(f'powerplan {__version__}')
         exit(0)
 
     if ARGS.log:
         log.print_log()
         exit(0)
 
+    # Initialize system interface
+    system = systemstatus.System(cpu=Cpu(), powersupply=PowerSupply())
+
     if ARGS.system:
-        print(status.SYSTEM_INFO)
+        print(system.info)
+        exit(0)
+
+    # List profiles and exit
+    if ARGS.list:
+        profiles = read_profiles(system=system)
+        for profile in profiles.values():
+            print(profile.description)
         exit(0)
 
     # Stuff that needs root
     if not shell.is_root():
-        log.log_error('Must be run with root provileges.')
-
-    if ARGS.uninstall:
-        shell.uninstall()
-        exit(0)
+        log.error('Must be run with root provileges.')
 
     if ARGS.daemon:
         shell.enable_daemon()
         exit(0)
 
-    # Check if already running
+    # Check if already running and define monitor mode accordingly
     if process.already_running():
         # Monitor mode
         if ARGS.status:
             monitor_mode = True
         elif ARGS.profile:
             # Profile will be overriden
-            log.log_warning('Single profile activation will get overwritten by the already running instance.')
+            log.warning('Single profile activation will get overwritten by the already running instance.')
         else:
-            log.log_error('An instance is already running. '
-                          'You can monitor system status with: powerplan --status.')
+            log.error('An instance is already running. '
+                      'You can monitor system status with: powerplan --status.')
     else:
         monitor_mode = False
 
     # Activate profile and exit
     if ARGS.profile:
-        single_activation(ARGS.profile)
+        single_activation(ARGS.profile, system=system)
         exit(0)
 
-    # Debug info
-    if ARGS.debug:
-        status.debug_power_info()
-
     try:
-        main_loop(monitor_mode)
+        main_loop(monitor_mode, system=system)
     except KeyboardInterrupt:
         exit(0)

@@ -9,12 +9,8 @@ import log
 from shell import shell, is_root, read, path_is_writable
 
 '''
-File structure:
-PATHS
-CPUSpec
-RAPL
-CPU INPUT
-CPU OUTPUT
+This module holds the Cpu class (cpu configuration interface)
+which also contains an instance of the CPUSpecification class
 '''
 
 # PATHS
@@ -22,24 +18,51 @@ SYSTEM_DIR = '/sys/devices/system/'
 CPU_DIR = SYSTEM_DIR + 'cpu/'
 CPUFREQ_DIR = CPU_DIR + 'cpu0/cpufreq/'
 
-# the order in this list embodies lookup priority
-ALLOWED_TEMP_SENSORS = ['coretemp', 'k10temp', 'zenpower', 'acpitz', 'thinkpad']
+
+def cpu_ranges_to_list(cpu_ranges: str) -> list:
+    '''Parses virtual cpu's (offline,online,present) files formatting '''
+    cpus = []
+    for cpu_range in cpu_ranges:
+        if '-' in cpu_range:
+            start, end = cpu_range.split('-')
+            cpus.extend(list(range(int(start), int(end)+1)))
+        else:
+            cpus.append(int(cpu_range))
+    return cpus
+
+def list_cores(status: str = 'present') -> list:
+    """list coreid's with status: offline, online, present"""
+    assert status in ['offline', 'online', 'present']
+    cpu_ranges = read(CPU_DIR + status)
+    if not cpu_ranges:
+        return []
+    else:
+        return cpu_ranges_to_list(cpu_ranges.split(','))
+
+def set_core_status(core_list: list, online: int):
+    # Needed to initialize CPU properly
+    assert online in [0, 1]
+    online = str(online)
+    for core_id in core_list:
+        core_id_online_path = Path(CPU_DIR + f'cpu{core_id}/online')
+        if core_id_online_path.exists():
+            core_id_online_path.write_text(online)
 
 
-class CPUSpec:
+class CPUSpecification:
     ''' Stores all static CPU attributes and paths (that vary between models and drivers) '''
 
     def __init__(self):
         # Check and warn if there are offline cores (when without root privilege and --system argument)
         cores_offline = list_cores('offline')
         if cores_offline:
-            log.log_info('Offline cores detected: ' + read(CPU_DIR + 'offline'))
+            log.info('Offline cores detected: ' + read(CPU_DIR + 'offline'))
             if is_root():
-                log.log_info('Setting all cores online to enable correct topology detection.')
+                log.info('Setting all cores online to enable correct topology detection.')
                 set_core_status(list_cores('present'), online=1)
             elif '--system' in sys.argv:
-                log.log_warning("CPU topology can't be correctly read (without root privileges)"
-                                ', since there are offline cores.')
+                log.warning("CPU topology can't be correctly read (without root privileges)"
+                            ', since there are offline cores.')
 
         # Model
         self.name = shell('grep "model name" /proc/cpuinfo').split(':')[-1].strip()
@@ -49,7 +72,7 @@ class CPUSpec:
         self.logical_cores = len(list_cores())
         # Reset core status
         if cores_offline and is_root():
-            log.log_info('Setting cores back to initial offline status.')
+            log.info('Setting cores back to initial offline status.')
             set_core_status(cores_offline, online=0)
 
         # Limits
@@ -57,16 +80,7 @@ class CPUSpec:
         self.maxfreq = read(CPUFREQ_DIR + 'cpuinfo_max_freq', dtype=int)
         self._set_turbo_variables()
         self.temp_sensor = self._available_temp_sensor()
-
-        # Read critical temperature, default to 100 if unavailable
-        if self.temp_sensor:
-            critical_temp = psutil.sensors_temperatures()[self.temp_sensor][0].critical
-            if critical_temp is None:
-                self.crit_temp = 100
-            else:
-                self.crit_temp = int(critical_temp)
-        else:
-            self.crit_temp = 100
+        self.crit_temp = self._read_crit_temp(self.temp_sensor)
 
         # governors / policies
         self.governors = read(CPUFREQ_DIR + 'scaling_available_governors').split(' ')
@@ -88,7 +102,7 @@ class CPUSpec:
             self.basefreq = read(CPUFREQ_DIR + 'base_frequency', dtype=int)
             self.min_perf_pct = Path(CPU_DIR + 'intel_pstate/min_perf_pct')
             self.max_perf_pct = Path(CPU_DIR + 'intel_pstate/max_perf_pct')
-            # he goes stuff unavailable with intel-pstate
+            # here goes stuff unavailable with intel-pstate
         else:
             self.driver = 'cpufreq'
             # stuff unavailable in cpufreq drivers
@@ -120,9 +134,9 @@ class CPUSpec:
         # governors_repr, policies_repr
         self.governors_repr = ", ".join(self.governors)
         self.policies_repr = ', '.join(self.policies)
-        log.log_info(f'Available governors: {self.governors_repr}')
+        log.info(f'Available governors: {self.governors_repr}')
         if self.policies:
-            log.log_info(f'Available policies: {self.policies_repr}')
+            log.info(f'Available policies: {self.policies_repr}')
 
     def _thread_siblings(self) -> list:
         # Physical core / Thread sibling detection#set_cores_online()
@@ -138,19 +152,32 @@ class CPUSpec:
                 siblings_set.add(siblings)
         return sorted(siblings_set)
 
-    def _available_temp_sensor(self):
-        '''Returns first available sensor in ALLOWED_TEMP_SENSORS, or None '''
+    def _available_temp_sensor(self) -> str:
+        '''Returns first available sensor in allowed_sensors, or None '''
         temperature_sensors = psutil.sensors_temperatures()
-        for sensor in ALLOWED_TEMP_SENSORS:
+        # the order in this list embodies lookup priority
+        allowed_sensors = ['coretemp', 'k10temp', 'zenpower', 'acpitz', 'thinkpad']
+        for sensor in allowed_sensors:
             if sensor in temperature_sensors:
                 return sensor
         else:
             msg = ("Couldn't detect a known CPU temperature sensor."
-                   f"\n\tKnown CPU temp sensors are: {ALLOWED_TEMP_SENSORS}"
+                   f"\n\tKnown CPU temp sensors are: {allowed_sensors}"
                    f"\n\tDetected sensors were: {temperature_sensors}"
                    "\n\tPlease open an issue at https://www.github.org/haptein/powerplan")
-            log.log_warning(msg)
+            log.warning(msg)
             return None
+
+    def _read_crit_temp(self, temp_sensor: str) -> int:
+        '''Read critical temperature, default to 100 if unavailable'''
+        if self.temp_sensor is not None:
+            critical_temp = psutil.sensors_temperatures()[self.temp_sensor][0].critical
+            if critical_temp is None:
+                return 100
+            else:
+                return int(critical_temp)
+        else:
+            return 100
 
     def _set_turbo_variables(self):
         '''Sets: turbo_allowed, turbo_file, turbo_inverse'''
@@ -171,12 +198,12 @@ class CPUSpec:
         else:
             turbo_path = None
             turbo_allowed = None
-            log.log_info('Turbo boost is not available.')
+            log.info('Turbo boost is not available.')
 
         if turbo_path is not None:
             turbo_allowed = path_is_writable(turbo_path)
             if not turbo_allowed and is_root():
-                log.log_info('Turbo (boost/core) is disabled on BIOS or not available.')
+                log.info('Turbo (boost/core) is disabled on BIOS or not available.')
 
         self.turbo_path = turbo_path
         self.turbo_inverse = turbo_inverse
@@ -192,7 +219,7 @@ class RaplLayer:
         self.energy_uj_path = layer_path/'energy_uj'
         # Initialize reading
         self.last_time, self.last_energy = self.read_time_energy()
-        log.log_info(f'IntelRapl layer initialized: {self.name}')
+        log.info(f'IntelRapl layer initialized: {self.name}')
 
     def read_time_energy(self):
         return time.time(), read(self.energy_uj_path, int)
@@ -209,9 +236,9 @@ class RaplLayer:
         if current_energy < self.last_energy:
             # Energy counter overflowed
             energy_delta += self.max_energy_range_uj
-            log.log_info(f'energy range overflow detected for intel-rapl layer:{self.name}.'
-                         f'time delta:{time_delta}, e_i:{current_energy}, e_i-1:{self.last_energy}'
-                         f'energy delta:{energy_delta}')
+            log.info(f'energy range overflow detected for intel-rapl layer:{self.name}.'
+                     f'time delta:{time_delta}, e_i:{current_energy}, e_i-1:{self.last_energy}'
+                     f'energy delta:{energy_delta}')
 
         current_power = energy_delta / time_delta / 10**6  # in Watt
 
@@ -232,9 +259,9 @@ class IntelRapl:
             self.enabled = False
 
         if self.enabled:
-            log.log_info('IntelRapl is enabled.')
+            log.info('IntelRapl is enabled.')
         else:
-            log.log_info('IntelRapl is unavailable.')
+            log.info('IntelRapl is unavailable.')
             return
 
         # If reached this point rapl exists and is enabled
@@ -250,208 +277,174 @@ class IntelRapl:
         else:
             return None
 
-def get_rapl():
-    ''' Returns an instance of appropriate Rapl Class'''
-    # a more generic rapl interface might be needed if AMD enables one
-    # if Path('/sys/class/powercap/intel-rapl/enabled').exists():
-    return IntelRapl()
-    #  elif amd_pstate's path exists:
-    #      return AMDRapl()
-
-# CPU STATUS
-
-def cpu_ranges_to_list(cpu_ranges: str) -> list:
-    '''Parses virtual cpu's (offline,online,present) files formatting '''
-    cpus = []
-    for cpu_range in cpu_ranges:
-        if '-' in cpu_range:
-            start, end = cpu_range.split('-')
-            cpus.extend(list(range(int(start), int(end)+1)))
-        else:
-            cpus.append(int(cpu_range))
-    return cpus
-
-def list_cores(status='present') -> list:
-    assert status in ['offline', 'online', 'present']
-    cpu_ranges = read(CPU_DIR + status)
-    if not cpu_ranges:
-        return []
-    else:
-        return cpu_ranges_to_list(cpu_ranges.split(','))
-
-def read_cpu_utilization(mode='max'):
+class Cpu:
     '''
-    CPU utilization
-    mode : str =  ['avg', 'max', 'all']
-    for mode in ['avg', 'max']
-        returns : float, in range [0.0-100.0]
-    for mode == 'all':
-        returns dict of floats with cpu_id:utilization pairs
+    Cpu configuration I/O
+    Contains:
+    spec, CpuSpecification
+    rapl, RAPL interface
+    a bunch of I/O methods
     '''
-    if mode == 'avg':
-        return psutil.cpu_percent()
-    elif mode == 'max':
-        return max(psutil.cpu_percent(percpu=True))
-    elif mode == 'all':
-        # Get online cores and return a dict from cpu_percent(percpu=True)
-        cores_online = list_cores('online')
-        percpu_utilization = psutil.cpu_percent(percpu=True)
-        return dict(zip(cores_online, percpu_utilization))
+    def __init__(self):
+        self.spec = CPUSpecification()
+        self.rapl = self.get_rapl()
 
-def read_temperature() -> float:
-    if CPU.temp_sensor:
-        return psutil.sensors_temperatures()[CPU.temp_sensor][0].current
-    else:
-        return -1
+    # CPU STATUS
+    def list_cores(self, status: str = 'present') -> list:
+        """list coreid's with status: offline, online, present"""
+        return list_cores(status)
 
-def read_crit_temp() -> int:
-    if CPU.temp_sensor:
-        # psutil temperature values can return None
-        critical_temp = psutil.sensors_temperatures()[CPU.temp_sensor][0].critical
-        if critical_temp is None:
-            return 100
+    def read_physical_core_status(self, core_num: int) -> bool:
+        assert 0 <= core_num and core_num <= self.spec.physical_cores - 1
+        core_ids = self.spec.thread_siblings[core_num]
+        # Can't (and shouldn't) turn off core 0
+        if 0 in core_ids:
+            return True
         else:
-            return int(critical_temp)
-    else:
-        # If no crit temp found default to 100
-        return 100
+            # Just test the first one,
+            # not expecting a case where other processes turn off cores
+            return bool(read(CPU_DIR + f'cpu{core_ids[0]}/online', int))
 
-# CPU Freq Scaling
+    def set_physical_cores_online(self, num_cores: int):
+        '''Sets the number of online physical cores, turns off the rest'''
+        assert 0 < num_cores and num_cores <= self.spec.physical_cores
+        # Iterate over physical core_num and virtual core siblings
+        for core_num, core_ids in enumerate(self.spec.thread_siblings):
+            core_online = self.read_physical_core_status(core_num)
+            # not <= bc core_num starts from zero
+            if core_num < num_cores:
+                # Set to Online
+                if not core_online:
+                    for core_id in core_ids:
+                        Path(CPU_DIR + f'cpu{core_id}/online').write_text('1')
+            else:
+                # Set to offline
+                if core_online:
+                    for core_id in core_ids:
+                        Path(CPU_DIR + f'cpu{core_id}/online').write_text('0')
 
-def read_governor(core_id: int = 0) -> str:
-    return read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor')
+    def read_cpu_utilization(self, mode='max'):
+        '''
+        CPU utilization
+        mode : str =  ['avg', 'max', 'all']
+        for mode in ['avg', 'max']
+            returns : float, in range [0.0-100.0]
+        for mode == 'all':
+            returns dict of floats with cpu_id:utilization pairs
+        '''
+        if mode == 'avg':
+            return psutil.cpu_percent()
+        elif mode == 'max':
+            return max(psutil.cpu_percent(percpu=True))
+        elif mode == 'all':
+            # Get online cores and return a dict from cpu_percent(percpu=True)
+            cores_online = list_cores('online')
+            percpu_utilization = psutil.cpu_percent(percpu=True)
+            return dict(zip(cores_online, percpu_utilization))
 
-def set_governor(governor):
-    assert governor in CPU.governors
-    if read_governor() != governor:
-        for core_id in list_cores('online'):
-            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
+    def read_temperature(self) -> float:
+        if self.spec.temp_sensor:
+            return psutil.sensors_temperatures()[self.spec.temp_sensor][0].current
+        else:
+            return -1
 
-def read_policy(core_id: int = 0) -> str:
-    if CPU.policies:
-        return read(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
-    else:
-        return ''
+    # CPU Freq Scaling
 
-def set_policy(policy):
-    if CPU.policies:
-        assert policy in CPU.policies
-        if policy != read_policy():
+    def read_governor(self, core_id: int = 0) -> str:
+        return read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor')
+
+    def set_governor(self, governor):
+        assert governor in self.spec.governors
+        if self.read_governor() != governor:
             for core_id in list_cores('online'):
-                Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
+                Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_governor').write_text(governor)
 
-def read_current_freq() -> dict:
-    ''' Returns dict of core_id:cur_freq'''
-    cores_online = list_cores('online')
-    cpuinfo = Path('/proc/cpuinfo')
-    cur_freqs = [int(float(line.split(':')[-1])) for line in cpuinfo.read_text().splitlines()
-                 if line.startswith('cpu M')]
-    return dict(zip(cores_online, cur_freqs))
-
-def read_freq_range(core_id: int = 0) -> list:
-    scaling_min_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
-    scaling_max_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq', int)
-    return [scaling_min_freq, scaling_max_freq]
-
-def set_freq_range(min_freq: int, max_freq: int):
-    # Preferred for cpufreq
-    assert min_freq <= max_freq
-    # Write new freq values if different from current
-    current_freq_range = read_freq_range()
-    for core_id in list_cores('online'):
-        if min_freq != current_freq_range[0]:
-            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq').write_text(str(min_freq))
-        if max_freq != current_freq_range[1]:
-            Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq').write_text(str(max_freq))
-
-def read_perf_range() -> tuple:
-    if CPU.driver == 'intel_pstate':
-        return read(CPU.min_perf_pct, int), read(CPU.max_perf_pct, int)
-
-def set_perf_range(min_perf_pct: int, max_perf_pct: int):
-    # This setting only exists for intel_pstate
-    assert max_perf_pct >= min_perf_pct
-    if CPU.driver == 'intel_pstate':
-        current_perf_range = read_perf_range()
-        if min_perf_pct != current_perf_range[0]:
-            CPU.min_perf_pct.write_text(str(min_perf_pct))
-        if max_perf_pct != current_perf_range[1]:
-            CPU.max_perf_pct.write_text(str(max_perf_pct))
-
-def read_turbo_state():
-    '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
-    if CPU.turbo_path is None:
-        return None
-    else:
-        return bool(int(CPU.turbo_path.read_text())) ^ CPU.turbo_inverse
-
-def set_turbo_state(turbo_state: bool):
-    if CPU.turbo_allowed and (turbo_state != read_turbo_state()):
-        CPU.turbo_path.write_text(str(int(turbo_state ^ CPU.turbo_inverse)))
-
-def set_core_status(core_list: list, online: int):
-    # Needed to initialize CPU properly
-    assert online in [0, 1]
-    online = str(online)
-    for core_id in core_list:
-        core_id_online_path = Path(CPU_DIR + f'cpu{core_id}/online')
-        if core_id_online_path.exists():
-            core_id_online_path.write_text(online)
-
-def read_physical_core_status(core_num: int) -> bool:
-    assert 0 <= core_num and core_num <= CPU.physical_cores - 1
-    core_ids = CPU.thread_siblings[core_num]
-    # Can't (and shouldn't) turn off core 0
-    if 0 in core_ids:
-        return True
-    else:
-        # Just test the first one,
-        # not expecting a case where other processes turn off cores
-        return bool(read(CPU_DIR + f'cpu{core_ids[0]}/online', int))
-
-def set_physical_cores_online(num_cores: int):
-    '''Sets the number of online physical cores, turns off the rest'''
-    assert 0 < num_cores and num_cores <= CPU.physical_cores
-    # Iterate over physical core_num and virtual core siblings
-    for core_num, core_ids in enumerate(CPU.thread_siblings):
-        core_online = read_physical_core_status(core_num)
-        # not <= bc core_num starts from zero
-        if core_num < num_cores:
-            # Set to Online
-            if not core_online:
-                for core_id in core_ids:
-                    Path(CPU_DIR + f'cpu{core_id}/online').write_text('1')
+    def read_policy(self, core_id: int = 0) -> str:
+        if self.spec.policies:
+            return read(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference')
         else:
-            # Set to offline
-            if core_online:
-                for core_id in core_ids:
-                    Path(CPU_DIR + f'cpu{core_id}/online').write_text('0')
+            return ''
 
-def set_tdp_limits(PL1: int, PL2: int):
-    '''
-    Set PL1 and PL2 power limits (intel_pstate)
-    If PL1 or PL2 is zero, this does nothing.
-    '''
-    assert PL1 <= PL2
-    if RAPL.enabled and PL1 and PL2:
-        PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
-        PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
-        if PL1_path.exists() and PL2_path.exists():
-            if PL1 > 0:
-                PL1_path.write_text(str(PL1*1_000_000))
-            if PL2 > 0:
-                PL2_path.write_text(str(PL2*1_000_000))
-            if PL1 > 0 or PL2 > 0:
-                PL1_path.with_name('enabled').write_text('1')
+    def set_policy(self, policy):
+        if self.spec.policies:
+            assert policy in self.spec.policies
+            if policy != self.read_policy():
+                for core_id in list_cores('online'):
+                    Path(CPU_DIR + f'cpu{core_id}/cpufreq/energy_performance_preference').write_text(policy)
 
-def wait_for_monotonic(t):
-    '''Make sure t seconds have passed since boot'''
-    time_since_boot = time.monotonic()
-    if time_since_boot < t:
-        time.sleep(t - time_since_boot)
+    def read_current_freq(self) -> dict:
+        ''' Returns dict of core_id:cur_freq'''
+        cores_online = self.list_cores('online')
+        cpuinfo = Path('/proc/cpuinfo')
+        cur_freqs = [int(float(line.split(':')[-1])) for line in cpuinfo.read_text().splitlines()
+                     if line.startswith('cpu M')]
+        return dict(zip(cores_online, cur_freqs))
 
+    def read_freq_range(self, core_id: int = 0) -> list:
+        scaling_min_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq', int)
+        scaling_max_freq = read(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq', int)
+        return [scaling_min_freq, scaling_max_freq]
 
-# Wait to make sure rapl infrastructure is fully initialized by driver if available
-wait_for_monotonic(t=10)
-CPU = CPUSpec()
-RAPL = get_rapl()
+    def set_freq_range(self, min_freq: int, max_freq: int):
+        # Preferred for cpufreq
+        assert min_freq <= max_freq
+        # Write new freq values if different from current
+        current_freq_range = self.read_freq_range()
+        for core_id in self.list_cores('online'):
+            if min_freq != current_freq_range[0]:
+                Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_min_freq').write_text(str(min_freq))
+            if max_freq != current_freq_range[1]:
+                Path(CPU_DIR + f'cpu{core_id}/cpufreq/scaling_max_freq').write_text(str(max_freq))
+
+    def read_perf_range(self) -> tuple:
+        if self.spec.driver == 'intel_pstate':
+            return read(self.spec.min_perf_pct, int), read(self.spec.max_perf_pct, int)
+
+    def set_perf_range(self, min_perf_pct: int, max_perf_pct: int):
+        # This setting only exists for intel_pstate
+        assert max_perf_pct >= min_perf_pct
+        if self.spec.driver == 'intel_pstate':
+            current_perf_range = self.read_perf_range()
+            if min_perf_pct != current_perf_range[0]:
+                self.spec.min_perf_pct.write_text(str(min_perf_pct))
+            if max_perf_pct != current_perf_range[1]:
+                self.spec.max_perf_pct.write_text(str(max_perf_pct))
+
+    def read_turbo_state(self):
+        '''Read existing turbo file and invert value if appropriate (intel_pstate/no_turbo).'''
+        if self.spec.turbo_path is None:
+            return None
+        else:
+            return bool(int(self.spec.turbo_path.read_text())) ^ self.spec.turbo_inverse
+
+    def set_turbo_state(self, turbo_state: bool):
+        if self.spec.turbo_allowed and (turbo_state != self.read_turbo_state()):
+            self.spec.turbo_path.write_text(str(int(turbo_state ^ self.spec.turbo_inverse)))
+
+    # TDP control
+
+    @staticmethod
+    def get_rapl():
+        ''' Returns an instance of appropriate Rapl Class'''
+        # a more generic rapl interface might be needed if AMD enables one
+        # if Path('/sys/class/powercap/intel-rapl/enabled').exists():
+        return IntelRapl()
+        #  elif amd_pstate's path exists:
+        #      return AMDRapl()
+
+    def set_tdp_limits(self, PL1: int, PL2: int):
+        '''
+        Set PL1 and PL2 power limits (intel_pstate)
+        If PL1 or PL2 is zero, this does nothing.
+        '''
+        assert PL1 <= PL2
+        if self.rapl.enabled and PL1 and PL2:
+            PL1_path = Path('/sys/class/powercap/intel-rapl:0/constraint_0_power_limit_uw')
+            PL2_path = PL1_path.with_name('constraint_1_power_limit_uw')
+            if PL1_path.exists() and PL2_path.exists():
+                if PL1 > 0:
+                    PL1_path.write_text(str(PL1*1_000_000))
+                if PL2 > 0:
+                    PL2_path.write_text(str(PL2*1_000_000))
+                if PL1 > 0 or PL2 > 0:
+                    PL1_path.with_name('enabled').write_text('1')

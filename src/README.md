@@ -3,24 +3,24 @@
     - config : reading and parsing and application of profile data
     - cpu : processor configuration interface
     - powerplan : main file
-    - status : system status, information display
+    - system : system and system status classes
+    - monitor : system status monitoring
     - log : logging
     - powersupply : ac-adapter/battery/UPS interface
     - process : Process reading
     - shell : shell interface and misc funcs
+    - systemstatus : system and status objects
 
 
 ## TODO
 
 ### Core Function
-- Status history, SystemStatus Object (wip)
 - System Efficiency modeling (wip, researching...)
 - Temperature control system (researching...)
-- change battery power_method if active one fails (?)
-- Add UPS as powersupply
 - Add support for amd-pstate (after it lands in mainline)
 
 ### QoL
 - Profile editing GUI
 - Check dependencies on install
-- Reuse History object in IntelLayer.power_read
+- Write optimized temp reading (psutil reads ALL sensors each time)
+- Add global config parameters: notify/persistence
