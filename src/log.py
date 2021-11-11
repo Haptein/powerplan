@@ -1,9 +1,11 @@
 import sys
 from pathlib import Path
+from subprocess import PIPE, run
 
 import shell
 
 VERBOSE = '--verbose' in sys.argv
+CAN_NOTIFY = not bool(run('which notify-send', stdout=PIPE, shell=True).returncode)
 
 def error(message):
     message = '[ERROR] ' + message
@@ -25,3 +27,6 @@ def print_log():
         print(shell.shell('journalctl -u powerplan.service'))
     else:
         error("powerplan.service is not installed. Run 'powerplan --daemon' to install daemon (systemd).")
+
+def notify(message):
+    shell('notify-send powerplan ' + message, return_stdout=False)

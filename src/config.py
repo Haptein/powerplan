@@ -1,12 +1,19 @@
 #!/usr/bin/python3
-import os
 import configparser
+from pathlib import Path
 from time import time, sleep
 
 import log
 from shell import is_root
 
-CONFIG_PATH = '/etc/powerplan.conf'
+CONFIG_DIR = Path('/etc/powerplan')
+CONFIG_PATH = CONFIG_DIR / 'powerplan.conf'
+PROFILES_PATH = CONFIG_DIR / 'profiles.conf'
+
+DEFAULT_CONFIG = dict(
+    persistence='0 # Enable this if another application overrides power configurations',
+    notifications='1'
+)
 
 def generate_default_profile(system) -> dict:
     '''Generates a defaul profile depending on system specifications'''
@@ -243,8 +250,42 @@ class PowerProfile:
             log.warning(f'bat_policy present in profile "{self.name}" but CPU does not support policies.')
 
 # Config IO
+def guarantee_config_dir():
+    CONFIG_DIR.mkdir(exist_ok=True)
 
-def check_config_keys(config, default_profile):
+def check_config_keys(config):
+    '''Check for unknown keys in config file'''
+    for key in config.keys():
+        if key not in DEFAULT_CONFIG:
+            log.error(f'Unknown key "{key}" found in config file.')
+
+def parse_config() -> configparser.SectionProxy:
+    '''Parse config file and check for errors'''
+    # make sure file exists (create default if it doesn't)
+    guarantee_config_dir()
+    if not CONFIG_PATH.exists():
+        log.info('Configuration file does not exist.')
+        write_config(DEFAULT_CONFIG)
+        log.info(f'New configuration file has been created at {CONFIG_PATH}.')
+
+    # configparser requires a section header but it's pointless here
+    config_as_str = '[config]\n' + CONFIG_PATH.read_text()  # the workaround
+    config = configparser.ConfigParser(defaults=DEFAULT_CONFIG, inline_comment_prefixes=(';', '#'))
+    config.read_string(config_as_str)
+
+    check_config_keys(config['config'])
+    return config['config']
+
+def read_config() -> dict:
+    config = parse_config()
+    config_dict = {key: config.getboolean(key) for key in config}
+    return config_dict
+
+def write_config(config: dict):
+    config_str = '\n'.join(f'{key}={value}' for (key, value) in config.items())
+    CONFIG_PATH.write_text(config_str)
+
+def check_profiles_keys(config, default_profile):
     '''Checks config keys present'''
 
     # Default profile must exist
@@ -265,32 +306,38 @@ def check_config_keys(config, default_profile):
                 log.error(f'Invalid profile "{profile_name}": invalid key "{key}".')
 
 
-def read_config(system):
-    '''Reads config file, checks values and returns config dict'''
+def parse_profiles(system) -> configparser.ConfigParser:
+    '''Reads profiles file, checks values and returns profiles dict'''
+    guarantee_config_dir()
+    PROFILES_PATH = CONFIG_DIR / 'profiles.conf'
     default_profile = generate_default_profile(system)
-    if not os.path.isfile(CONFIG_PATH):
-        log.info('Configuration file does not exist.')
-        write_default_config(default_profile)
-        log.info(f'New config file has been created at {CONFIG_PATH}.')
+    if not PROFILES_PATH.exists():
+        log.info('Profiles file does not exist.')
+        write_default_profile(system)
+        log.info(f'New profiles file has been created at {PROFILES_PATH}.')
 
-    config = configparser.ConfigParser()
-    config.read(CONFIG_PATH)
-    check_config_keys(config, default_profile)
-    return config
+    profile_parser = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
+    profile_parser.read(PROFILES_PATH)
+    check_profiles_keys(profile_parser, default_profile)
+    return profile_parser
 
-def write_default_config(default_profile):
+def write_default_profile(system):
     if not is_root():
         print('Configuration file does not exist.')
         log.error('Root privileges needed to write configuration file.')
-    config = configparser.ConfigParser()
-    config['DEFAULT'] = default_profile
-    with open(CONFIG_PATH, 'w') as file:
-        config.write(file)
+    profileparser = configparser.ConfigParser()
+    profileparser['DEFAULT'] = generate_default_profile(system)
+    write_profiles(profileparser)
 
-def read_profiles(system):
+def write_profiles(profile_parser: configparser.ConfigParser):
+    profiles_file = CONFIG_DIR / 'profiles.conf'
+    with profiles_file.open(mode='w') as file:
+        profile_parser.write(file)
+
+def read_profiles(system) -> dict:
     '''returns a dict of PowerProfile objects, sorted by ascending priority'''
-    config = read_config(system)
-    profiles = {key: PowerProfile(name=key, section=config[key], system=system) for key in config}
+    profile_parser = parse_profiles(system)
+    profiles = {key: PowerProfile(name=key, section=section, system=system) for (key, section) in profile_parser.items()}
     # Sort and return
     sorted_names = sorted(profiles, key=lambda name: profiles[name].priority)
     return {name: profiles[name] for name in sorted_names}

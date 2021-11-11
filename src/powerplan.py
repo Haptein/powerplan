@@ -12,8 +12,8 @@ import process
 import systemstatus
 from cpu import Cpu
 from __init__ import __version__
-from config import read_profiles
 from powersupply import PowerSupply
+from config import read_config, read_profiles
 
 argparser = ArgumentParser(description='Automatic CPU power configuration control.')
 argparser.add_argument('-d', '--debug', action='store_true', help=SUPPRESS)
@@ -23,7 +23,6 @@ argparser.add_argument('-r', '--reload', action='store_true', help='enable confi
 argparser.add_argument('-s', '--status', action='store_true', help="display system status periodically")
 argparser.add_argument('--daemon', action='store_true', help='install and enable as a system daemon (systemd)')
 argparser.add_argument('--log', action='store_true', help='print daemon log')
-argparser.add_argument('--persistent', action='store_true', help='use this if your profile is reset by your computer')
 argparser.add_argument('--system', action='store_true', help='show system info and exit')
 argparser.add_argument('--uninstall', action='store_true', help='uninstall program')
 argparser.add_argument('--verbose', action='store_true', help='print runtime info')
@@ -44,7 +43,14 @@ def single_activation(profile: str, system: systemstatus.System):
         log.error(f'Profile "{ARGS.profile}" not found in config file.')
 
 def main_loop(monitor_mode: bool, system: systemstatus.System):
+    config = read_config()
     profiles = read_profiles(system)
+
+    # --reload forces persistency
+    config['persistent'] = config['persistent'] or ARGS.reload
+    if config['notify'] and not log.CAN_NOTIFY:
+        log.warning('libnotify was not found but notifications enabled in configuration.')
+        config['notify'] = False
 
     # Get status object and needed fields at iteration start
     if ARGS.status:
@@ -74,7 +80,9 @@ def main_loop(monitor_mode: bool, system: systemstatus.System):
                 # Log only on changes, even if --persistent is used (to avoid flooding journal)
                 log.info(f'Applying profile: {profile.name}-{"AC" if status["ac_power"] else "Battery"}')
                 profile.apply(status)
-            elif ARGS.persistent:
+                if config['notify']:
+                    log.notify('Profile [{profile.name}] active.')
+            elif config['persistent']:
                 profile.apply(status)
 
         if ARGS.status:
@@ -95,8 +103,6 @@ if __name__ == '__main__':
     log.info(f'powerplan: v{__version__}')
 
     ARGS = argparser.parse_args()
-    # --reload forces --persistent
-    ARGS.persistent = ARGS.persistent or ARGS.reload
 
     # uninstall goes first so if something else fails, user can still easily uninstall
     if ARGS.uninstall:
