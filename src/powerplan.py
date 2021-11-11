@@ -47,10 +47,10 @@ def main_loop(monitor_mode: bool, system: systemstatus.System):
     profiles = read_profiles(system)
 
     # --reload forces persistency
-    config['persistent'] = config['persistent'] or ARGS.reload
-    if config['notify'] and not log.CAN_NOTIFY:
+    config['persistence'] = config['persistence'] or ARGS.reload
+    if config['notifications'] and not log.CAN_NOTIFY:
         log.warning('libnotify was not found but notifications enabled in configuration.')
-        config['notify'] = False
+        config['notifications'] = False
 
     # Get status object and needed fields at iteration start
     if ARGS.status:
@@ -80,9 +80,9 @@ def main_loop(monitor_mode: bool, system: systemstatus.System):
                 # Log only on changes, even if --persistent is used (to avoid flooding journal)
                 log.info(f'Applying profile: {profile.name}-{"AC" if status["ac_power"] else "Battery"}')
                 profile.apply(status)
-                if config['notify']:
+                if config['notifications']:
                     log.notify('Profile [{profile.name}] active.')
-            elif config['persistent']:
+            elif config['persistence']:
                 profile.apply(status)
 
         if ARGS.status:

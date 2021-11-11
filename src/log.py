@@ -29,4 +29,4 @@ def print_log():
         error("powerplan.service is not installed. Run 'powerplan --daemon' to install daemon (systemd).")
 
 def notify(message):
-    shell('notify-send powerplan ' + message, return_stdout=False)
+    shell.shell(f'notify-send "{message}" "powerplan"', return_stdout=False)
