@@ -46,7 +46,6 @@ optional arguments:
   -s, --status          display system status periodically
   --daemon              install and enable as a system daemon (systemd)
   --log                 print daemon log
-  --persistent          use this if your profile is reset by your computer
   --system              show system info and exit
   --uninstall           uninstall program
   --verbose             print runtime info

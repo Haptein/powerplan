@@ -23,4 +23,6 @@
 - Profile editing GUI
 - Check dependencies on install
 - Write optimized temp reading (psutil reads ALL sensors each time)
-- Add global config parameters: notify/persistence
+- Config object with tests (notification capabilities)
+- Readme update configuration
+- Check for old profiles in /etc/powerplan.conf
