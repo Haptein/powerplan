@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import re
 import sys
 import time
 from pathlib import Path
@@ -147,7 +148,8 @@ class CPUSpecification:
             # File won't exist if cpu is offline
             if thread_siblings_list.exists():
                 # add sibling pair to a set
-                thread_siblings = thread_siblings_list.read_text().strip().split(',')
+                # thread_siblings_list can be formatted as "0,1" or "0-1" (no standard)
+                thread_siblings = re.split('[,-]', thread_siblings_list.read_text().strip())
                 siblings = tuple(int(ths) for ths in thread_siblings)
                 siblings_set.add(siblings)
         return sorted(siblings_set)
